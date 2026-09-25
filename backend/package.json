@@ -1,0 +1,30 @@
+{
+  "name": "sistema-gestion-documental-backend",
+  "version": "1.0.0",
+  "description": "Backend Sistema de Gestión Documental",
+  "main": "server.js",
+
+  "scripts": {
+    "start": "node server.js"
+  },
+
+  "keywords": [
+    "gestion-documental",
+    "express",
+    "mysql",
+    "railway"
+  ],
+
+  "author": "",
+  "license": "ISC",
+
+  "type": "commonjs",
+
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "multer": "^2.4.0",
+    "mysql2": "^3.24.4"
+  }
+}
