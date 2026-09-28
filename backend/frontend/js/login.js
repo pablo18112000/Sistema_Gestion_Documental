@@ -1,134 +1,135 @@
 function login(){
 
 
-let correo =
-document.getElementById("correo").value;
+    let correo = 
+    document.getElementById("correo").value;
 
 
-let password =
-document.getElementById("password").value;
+    let password = 
+    document.getElementById("password").value;
 
 
 
-fetch(
+    fetch(
 
-"http://localhost:3000/usuarios/login",
+        "https://sistemagestiondocumental-production-885c.up.railway.app/usuarios/login",
 
-{
+        {
 
-method:"POST",
+            method:"POST",
 
-headers:{
+            headers:{
 
-"Content-Type":"application/json"
+                "Content-Type":"application/json"
 
-},
+            },
 
 
-body:JSON.stringify({
+            body:JSON.stringify({
 
-usuario:correo,
+                usuario:correo,
 
-password:password
+                password:password
 
-})
+            })
 
 
-}
+        }
 
+    )
 
-)
 
+    .then(res=>res.json())
 
-.then(res=>res.json())
 
+    .then(data=>{
 
-.then(data=>{
 
+        if(!data.success){
 
 
-if(!data.success){
+            document.getElementById("mensaje").innerHTML =
+            "❌ " + data.mensaje;
 
 
-document.getElementById("mensaje").innerHTML =
-"❌ "+data.mensaje;
+            return;
 
 
-return;
+        }
 
 
-}
 
+        let rol = data.usuario.nombre_rol;
 
 
 
-let rol =
-data.usuario.nombre_rol;
+        // Guardar sesión del usuario
 
+        localStorage.setItem(
 
+            "usuario",
 
-// guardar sesión
+            JSON.stringify(data.usuario)
 
-localStorage.setItem(
+        );
 
-"usuario",
 
-JSON.stringify(data.usuario)
 
-);
 
+        // Redirección según rol
 
+        if(rol==="Supervisor"){
 
 
+            window.location.href="supervisor.html";
 
-if(rol==="Supervisor"){
 
+        }
 
-window.location.href="supervisor.html";
 
+        else if(rol==="Administrador"){
 
-}
 
+            window.location.href="admin.html";
 
-else if(rol==="Administrador"){
 
+        }
 
-window.location.href="admin.html";
 
+        else if(rol==="Usuario"){
 
-}
 
+            window.location.href="usuario.html";
 
-else if(rol==="Usuario"){
 
+        }
 
-window.location.href="usuario.html";
 
+        else{
 
-}
 
+            alert("Rol sin configuración");
 
-else{
 
+        }
 
-alert("Rol sin configuración");
 
 
-}
 
+    })
 
 
+    .catch(error=>{
 
-})
 
+        console.log(error);
 
-.catch(error=>{
 
+        document.getElementById("mensaje").innerHTML =
+        "❌ Error de conexión con el servidor";
 
-console.log(error);
 
-
-});
+    });
 
 
 }
