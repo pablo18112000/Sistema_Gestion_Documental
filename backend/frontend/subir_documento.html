@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+
+<html>
+
+
+<head>
+
+<title>
+Subir Documento
+</title>
+
+
+<link rel="stylesheet" href="css/estilo.css?v=1">
+
+
+</head>
+
+
+
+<body>
+
+
+
+<header>
+
+
+<h1>
+📁 Sistema de Gestión Documental
+</h1>
+
+
+<h2>
+Subir Documento
+</h2>
+
+
+
+</header>
+
+
+
+
+
+<section class="contenedor">
+
+
+
+<h2>
+📤 Nuevo Documento
+</h2>
+
+
+
+
+<div class="formulario">
+
+
+
+<label>
+Carpeta
+</label>
+
+
+<select id="carpeta">
+
+<option>
+Cargando...
+</option>
+
+</select>
+
+
+
+
+
+<label>
+Tipo de Archivo
+</label>
+
+
+<select id="tipo">
+
+
+<option>
+Cargando...
+</option>
+
+
+</select>
+
+
+
+
+
+<label>
+Descripción del documento
+</label>
+
+
+<textarea 
+id="descripcion"
+placeholder="Ingrese una descripción del documento">
+</textarea>
+
+
+
+
+
+<label>
+Seleccionar archivo
+</label>
+
+
+
+<input
+
+type="file"
+
+id="archivo"
+
+>
+
+
+
+
+<button onclick="subirDocumento()">
+
+📤 Subir Documento
+
+</button>
+
+
+
+
+<p id="mensaje"></p>
+
+
+
+
+</div>
+
+
+
+</section>
+
+
+
+
+
+
+<script src="js/documentos.js"></script>
+
+
+
+</body>
+
+
+</html>
