@@ -1,6 +1,11 @@
 let usuarioSeleccionado = 0;
 
 
+const API = "https://sistemagestiondocumental-production-885c.up.railway.app";
+
+
+
+// Cargar usuarios al abrir página
 
 document.addEventListener(
 
@@ -17,25 +22,24 @@ cargarUsuarios();
 
 
 
-
+// ===============================
+// LISTAR USUARIOS
+// ===============================
 
 function cargarUsuarios(){
 
 
-
 fetch(
 
-"http://localhost:3000/usuarios"
+API + "/usuarios"
 
 )
-
 
 
 .then(res=>res.json())
 
 
 .then(data=>{
-
 
 
 let tabla=document.getElementById("listaUsuarios");
@@ -48,7 +52,6 @@ tabla.innerHTML="";
 data.usuarios.forEach(usuario=>{
 
 
-
 tabla.innerHTML += `
 
 
@@ -56,62 +59,50 @@ tabla.innerHTML += `
 
 
 <td>
-
 ${usuario.nombre}
-
 </td>
 
 
 <td>
-
 ${usuario.apellido}
-
 </td>
 
 
 <td>
-
 ${usuario.correo}
-
 </td>
 
 
 <td>
-
 ${usuario.nombre_rol}
-
 </td>
 
 
 <td>
-
 ${usuario.nombre_area}
-
 </td>
 
 
 <td>
-
 ${usuario.estado==1?"Activo":"Inactivo"}
-
 </td>
 
 
 <td>
 
 
-
-<button onclick="abrirEditar(${usuario.id_usuario},
+<button onclick="abrirEditar(
+${usuario.id_usuario},
 '${usuario.nombre}',
 '${usuario.apellido}',
 '${usuario.correo}',
 ${usuario.id_rol},
-${usuario.id_area})">
+${usuario.id_area}
+)">
 
 ✏ Editar
 
 </button>
-
 
 
 
@@ -124,12 +115,10 @@ ${usuario.estado==1?"🔒 Desactivar":"🔓 Activar"}
 </button>
 
 
-
 </td>
 
 
 </tr>
-
 
 
 `;
@@ -139,7 +128,17 @@ ${usuario.estado==1?"🔒 Desactivar":"🔓 Activar"}
 });
 
 
+})
+
+
+.catch(error=>{
+
+
+console.log(error);
+
+
 });
+
 
 
 }
@@ -149,8 +148,9 @@ ${usuario.estado==1?"🔒 Desactivar":"🔓 Activar"}
 
 
 
-
-
+// ===============================
+// MOSTRAR FORMULARIO
+// ===============================
 
 function abrirFormulario(){
 
@@ -160,27 +160,31 @@ let formulario=document.getElementById("formularioUsuario");
 
 if(formulario.style.display==="none"){
 
+
 formulario.style.display="block";
+
 
 }else{
 
+
 formulario.style.display="none";
 
-}
-
 
 }
 
 
+}
 
 
 
 
 
 
+// ===============================
+// CREAR USUARIO
+// ===============================
 
 function crearUsuario(){
-
 
 
 let datos={
@@ -210,7 +214,6 @@ id_area:
 document.getElementById("area").value
 
 
-
 };
 
 
@@ -218,7 +221,7 @@ document.getElementById("area").value
 
 fetch(
 
-"http://localhost:3000/usuarios",
+API + "/usuarios",
 
 {
 
@@ -228,13 +231,14 @@ method:"POST",
 
 headers:{
 
+
 "Content-Type":"application/json"
+
 
 },
 
 
 body:JSON.stringify(datos)
-
 
 
 }
@@ -259,6 +263,7 @@ cargarUsuarios();
 });
 
 
+
 }
 
 
@@ -267,7 +272,9 @@ cargarUsuarios();
 
 
 
-
+// ===============================
+// ABRIR EDICIÓN
+// ===============================
 
 function abrirEditar(
 
@@ -313,11 +320,11 @@ document.getElementById("editArea").value=area;
 
 
 
-
-
+// ===============================
+// GUARDAR EDICIÓN
+// ===============================
 
 function guardarEdicion(){
-
 
 
 let datos={
@@ -343,16 +350,14 @@ id_area:
 document.getElementById("editArea").value
 
 
-
 };
-
 
 
 
 
 fetch(
 
-"http://localhost:3000/usuarios/editar/"+usuarioSeleccionado,
+API + "/usuarios/editar/" + usuarioSeleccionado,
 
 {
 
@@ -362,13 +367,14 @@ method:"PUT",
 
 headers:{
 
+
 "Content-Type":"application/json"
+
 
 },
 
 
 body:JSON.stringify(datos)
-
 
 
 }
@@ -396,6 +402,7 @@ cargarUsuarios();
 });
 
 
+
 }
 
 
@@ -403,16 +410,16 @@ cargarUsuarios();
 
 
 
-
-
+// ===============================
+// CAMBIAR ESTADO
+// ===============================
 
 function cambiarEstado(id,estado){
 
 
-
 fetch(
 
-"http://localhost:3000/usuarios/estado/"+id,
+API + "/usuarios/estado/" + id,
 
 {
 
@@ -422,14 +429,18 @@ method:"PUT",
 
 headers:{
 
+
 "Content-Type":"application/json"
+
 
 },
 
 
 body:JSON.stringify({
 
+
 estado:estado==1?0:1
+
 
 })
 
@@ -454,6 +465,7 @@ cargarUsuarios();
 
 
 });
+
 
 
 }
