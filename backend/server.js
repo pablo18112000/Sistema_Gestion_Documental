@@ -2,34 +2,26 @@
 // SERVIDOR SISTEMA GESTIÓN DOCUMENTAL
 // =====================================
 
-
 require("dotenv").config();
-
 
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
 
-
-// Importar conexión MySQL
+// Conexión MySQL
 require("./config/db");
-
 
 
 const app = express();
 
 
-
 // =====================================
-// CONFIGURACIONES GENERALES
+// CONFIGURACIONES
 // =====================================
-
 
 app.use(cors());
 
-
 app.use(express.json());
-
 
 app.use(express.urlencoded({
     extended:true
@@ -37,12 +29,9 @@ app.use(express.urlencoded({
 
 
 
-
 // =====================================
 // ARCHIVOS SUBIDOS
-// PDF - WORD - EXCEL - IMÁGENES
 // =====================================
-
 
 app.use(
     "/uploads",
@@ -53,11 +42,9 @@ app.use(
 
 
 
-
 // =====================================
 // SERVIR FRONTEND
 // =====================================
-
 
 app.use(
     express.static(
@@ -67,14 +54,12 @@ app.use(
 
 
 
-
-
 // =====================================
-// RUTAS DEL SISTEMA
+// RUTAS API
 // =====================================
 
 
-// USUARIOS
+// Usuarios
 
 app.use(
     "/usuarios",
@@ -82,9 +67,7 @@ app.use(
 );
 
 
-
-
-// DOCUMENTOS
+// Documentos
 
 app.use(
     "/documentos",
@@ -92,9 +75,7 @@ app.use(
 );
 
 
-
-
-// APROBACIONES
+// Aprobaciones
 
 app.use(
     "/aprobaciones",
@@ -104,91 +85,61 @@ app.use(
 
 
 
-
-
 // =====================================
-// RUTA PRINCIPAL
+// PAGINA PRINCIPAL
 // =====================================
-
 
 app.get("/",(req,res)=>{
 
-
     res.sendFile(
-
         path.join(
             __dirname,
             "../frontend/login.html"
         )
-
     );
-
 
 });
 
 
 
 
-
-
 // =====================================
-// PANEL SUPERVISOR
+// PANELES
 // =====================================
 
 
 app.get("/supervisor.html",(req,res)=>{
 
-
     res.sendFile(
-
         path.join(
             __dirname,
             "../frontend/supervisor.html"
         )
-
     );
-
 
 });
 
-
-
-
-
-
-// =====================================
-// HISTORIAL SUPERVISOR
-// =====================================
 
 
 app.get("/historial.html",(req,res)=>{
 
-
     res.sendFile(
-
         path.join(
             __dirname,
             "../frontend/historial.html"
         )
-
     );
-
 
 });
 
 
 
 
-
-
-
 // =====================================
-// CONTROL DE RUTAS NO EXISTENTES
+// ERROR 404
 // =====================================
-
 
 app.use((req,res)=>{
-
 
     res.status(404).json({
 
@@ -198,29 +149,23 @@ app.use((req,res)=>{
 
     });
 
-
 });
 
 
 
 
-
-
 // =====================================
-// PUERTO PARA LOCAL Y RAILWAY
+// PUERTO LOCAL + RAILWAY
 // =====================================
 
 
 const PORT = process.env.PORT || 3000;
 
 
-
 app.listen(PORT,()=>{
-
 
     console.log(
         `Servidor Gestión Documental iniciado en puerto ${PORT}`
     );
-
 
 });
