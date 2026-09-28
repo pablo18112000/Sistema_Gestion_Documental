@@ -1,21 +1,36 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="es">
+
 
 <head>
+
+
+<meta charset="UTF-8">
+
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 
 <title>
 Panel Administrador
 </title>
 
 
-<link rel="stylesheet" href="css/estilo.css">
+
+<link rel="stylesheet" href="css/admin.css">
+
 
 
 </head>
 
 
+
+
 <body>
+
+
+
 
 
 <header>
@@ -26,9 +41,11 @@ Panel Administrador
 </h1>
 
 
+
 <h2>
 Panel Administrador
 </h2>
+
 
 
 </header>
@@ -37,7 +54,11 @@ Panel Administrador
 
 
 
-<section class="contenedor">
+
+
+<section class="container">
+
+
 
 
 
@@ -49,11 +70,18 @@ Panel Administrador
 </h2>
 
 
-<button onclick="abrirFormulario()">
+
+
+<button 
+class="btn-nuevo"
+onclick="abrirFormulario()">
+
 
 ➕ Nuevo Usuario
 
+
 </button>
+
 
 
 </div>
@@ -63,9 +91,18 @@ Panel Administrador
 
 
 
-<!-- FORMULARIO CREAR -->
 
-<div id="formularioUsuario" style="display:none;">
+
+
+<!-- =========================
+     FORMULARIO CREAR
+========================= -->
+
+
+<div 
+id="formularioUsuario"
+style="display:none;">
+
 
 
 <h3>
@@ -74,16 +111,31 @@ Registrar Nuevo Usuario
 
 
 
-<input id="nombre" placeholder="Nombre">
+<input 
+id="nombre"
+placeholder="Nombre">
 
 
-<input id="apellido" placeholder="Apellido">
+
+<input 
+id="apellido"
+placeholder="Apellido">
 
 
-<input id="correo" placeholder="Correo">
+
+<input 
+id="correo"
+placeholder="Correo">
 
 
-<input id="password" type="password" placeholder="Contraseña">
+
+<input 
+id="password"
+type="password"
+placeholder="Contraseña">
+
+
+
 
 
 
@@ -91,21 +143,31 @@ Registrar Nuevo Usuario
 
 
 <option value="1">
+
 Administrador
+
 </option>
 
 
 <option value="2">
+
 Supervisor
+
 </option>
 
 
+
 <option value="3">
+
 Usuario
+
 </option>
 
 
 </select>
+
+
+
 
 
 
@@ -113,39 +175,70 @@ Usuario
 
 
 <option value="1">
+
 Recursos Humanos
+
 </option>
+
 
 
 <option value="2">
+
 Servicios y/o Proyectos
+
 </option>
+
+
 
 
 <option value="3">
+
 Administración
+
 </option>
+
+
 
 
 <option value="4">
+
 Logística
+
 </option>
+
+
 
 
 <option value="5">
+
 Seguridad
+
 </option>
+
 
 
 </select>
 
 
 
-<button onclick="crearUsuario()">
+
+
+
+<button
+
+class="btn-guardar"
+
+onclick="crearUsuario()">
+
+
 
 Guardar Usuario
 
+
+
 </button>
+
+
 
 
 
@@ -157,10 +250,19 @@ Guardar Usuario
 
 
 
-<!-- FORMULARIO EDITAR -->
 
 
-<div id="editarUsuario" style="display:none;">
+<!-- =========================
+     FORMULARIO EDITAR
+========================= -->
+
+
+<div 
+id="editarUsuario"
+style="display:none;">
+
+
+
 
 
 <h3>
@@ -169,13 +271,39 @@ Editar Usuario
 
 
 
-<input id="editNombre" placeholder="Nombre">
 
 
-<input id="editApellido" placeholder="Apellido">
+<input
+
+id="editNombre"
+
+placeholder="Nombre">
 
 
-<input id="editCorreo" placeholder="Correo">
+
+
+
+
+<input
+
+id="editApellido"
+
+placeholder="Apellido">
+
+
+
+
+
+
+<input
+
+id="editCorreo"
+
+placeholder="Correo">
+
+
+
+
 
 
 
@@ -183,21 +311,31 @@ Editar Usuario
 
 
 <option value="1">
+
 Administrador
+
 </option>
 
 
 <option value="2">
+
 Supervisor
+
 </option>
 
 
 <option value="3">
+
 Usuario
+
 </option>
 
 
+
 </select>
+
+
+
 
 
 
@@ -206,27 +344,41 @@ Usuario
 
 
 <option value="1">
+
 Recursos Humanos
+
 </option>
+
 
 
 <option value="2">
+
 Servicios y/o Proyectos
+
 </option>
+
 
 
 <option value="3">
+
 Administración
+
 </option>
+
 
 
 <option value="4">
+
 Logística
+
 </option>
 
 
+
 <option value="5">
+
 Seguridad
+
 </option>
 
 
@@ -234,11 +386,27 @@ Seguridad
 
 
 
-<button onclick="guardarEdicion()">
+
+
+
+
+
+<button
+
+class="btn-guardar"
+
+onclick="guardarEdicion()">
+
+
 
 Guardar Cambios
 
+
+
 </button>
+
+
+
 
 
 
@@ -252,7 +420,15 @@ Guardar Cambios
 
 
 
+<!-- =========================
+        TABLA USUARIOS
+========================= -->
+
+
+
 <table>
+
+
 
 
 <thead>
@@ -266,9 +442,11 @@ Nombre
 </th>
 
 
+
 <th>
 Apellido
 </th>
+
 
 
 <th>
@@ -276,9 +454,11 @@ Correo
 </th>
 
 
+
 <th>
 Rol
 </th>
+
 
 
 <th>
@@ -286,14 +466,17 @@ Rol
 </th>
 
 
+
 <th>
 Estado
 </th>
 
 
+
 <th>
 Acciones
 </th>
+
 
 
 </tr>
@@ -304,8 +487,10 @@ Acciones
 
 
 
-<tbody id="listaUsuarios">
 
+
+
+<tbody id="listaUsuarios">
 
 
 </tbody>
@@ -313,7 +498,10 @@ Acciones
 
 
 
+
 </table>
+
+
 
 
 
@@ -324,10 +512,16 @@ Acciones
 
 
 
+
+
+
+
 <script src="js/auth.js"></script>
 
 
+
 <script>
+
 
 verificarSesion("Administrador");
 
@@ -336,7 +530,10 @@ verificarSesion("Administrador");
 
 
 
+
+
 <script src="js/admin.js"></script>
+
 
 
 

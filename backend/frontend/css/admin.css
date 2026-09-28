@@ -1,11 +1,13 @@
-/* ==============================
-   SISTEMA GESTION DOCUMENTAL
+/* =====================================
+   SISTEMA GESTIÓN DOCUMENTAL
    PANEL ADMINISTRADOR
-================================*/
+===================================== */
 
 
 *{
+
     box-sizing:border-box;
+
 }
 
 
@@ -13,39 +15,57 @@
 body{
 
     margin:0;
+
     font-family:"Segoe UI", Arial, sans-serif;
+
     background:#f1f5f9;
+
+    color:#334155;
 
 }
 
 
 
 
-/* CABECERA */
+
+
+/* =====================================
+              CABECERA
+===================================== */
+
 
 header{
 
     background:#1f5f95;
+
     color:white;
+
     text-align:center;
+
     padding:35px;
 
 }
 
 
+
 header h1{
 
     margin:0;
+
     font-size:36px;
+
     font-weight:700;
 
 }
 
 
+
 header h2{
 
-    margin-top:10px;
+    margin-top:12px;
+
     font-size:22px;
+
     font-weight:400;
 
 }
@@ -54,21 +74,31 @@ header h2{
 
 
 
-/* CONTENEDOR PRINCIPAL */
+
+
+/* =====================================
+          CONTENEDOR PRINCIPAL
+===================================== */
 
 
 .container{
 
+
     width:90%;
+
     margin:45px auto;
+
     background:white;
 
     padding:35px;
 
     border-radius:18px;
 
+
     box-shadow:
+
     0 10px 25px rgba(0,0,0,.12);
+
 
 }
 
@@ -76,21 +106,45 @@ header h2{
 
 
 
-/* TITULO */
+
+/* =====================================
+              TITULO
+===================================== */
 
 
 .titulo{
 
-    color:#245b8d;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+
+    border-bottom:
+
+    3px solid #245784;
+
+
+    padding-bottom:18px;
+
+    margin-bottom:25px;
+
+
+}
+
+
+
+.titulo h2{
+
+
+    margin:0;
+
+    color:#245784;
 
     font-size:30px;
 
-    font-weight:700;
-
-    padding-bottom:15px;
-
-    border-bottom:
-    3px solid #245b8d;
 
 }
 
@@ -98,13 +152,15 @@ header h2{
 
 
 
-/* BOTON NUEVO */
+
+
+/* =====================================
+              BOTÓN NUEVO
+===================================== */
 
 
 .btn-nuevo{
 
-
-    margin-top:25px;
 
     background:#22c55e;
 
@@ -122,12 +178,16 @@ header h2{
 
     cursor:pointer;
 
+
 }
+
 
 
 .btn-nuevo:hover{
 
+
     background:#16a34a;
+
 
 }
 
@@ -136,30 +196,189 @@ header h2{
 
 
 
-/* TABLA */
+
+/* =====================================
+              FORMULARIOS
+===================================== */
+
+
+#formularioUsuario,
+#editarUsuario{
+
+
+    margin-top:25px;
+
+    padding:30px;
+
+
+    background:#f8fafc;
+
+
+    border-radius:15px;
+
+
+    border:
+
+    1px solid #e2e8f0;
+
+
+}
+
+
+
+#formularioUsuario h3,
+#editarUsuario h3{
+
+
+    color:#245784;
+
+    font-size:22px;
+
+
+}
+
+
+
+
+input,
+select{
+
+
+    width:100%;
+
+
+    padding:13px;
+
+
+    margin:10px 0;
+
+
+    border-radius:8px;
+
+
+    border:
+
+    1px solid #cbd5e1;
+
+
+    font-size:15px;
+
+
+}
+
+
+
+
+input:focus,
+select:focus{
+
+
+    outline:none;
+
+
+    border:
+
+    2px solid #245784;
+
+
+}
+
+
+
+
+
+
+
+.btn-guardar{
+
+
+    background:#2563eb;
+
+
+    color:white;
+
+
+    padding:13px 28px;
+
+
+    border:none;
+
+
+    border-radius:8px;
+
+
+    cursor:pointer;
+
+
+    font-weight:bold;
+
+
+}
+
+
+
+.btn-guardar:hover{
+
+
+    background:#1d4ed8;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================
+              TABLA
+===================================== */
 
 
 table{
 
+
     width:100%;
 
-    margin-top:30px;
 
-    border-collapse:collapse;
+    margin-top:35px;
+
+
+    border-collapse:separate;
+
+
+    border-spacing:0;
+
+
+    background:white;
+
+
+    border-radius:14px;
+
 
     overflow:hidden;
 
-    border-radius:12px;
+
+    box-shadow:
+
+    0 5px 15px rgba(0,0,0,.08);
+
 
 }
+
 
 
 
 thead{
 
-    background:#245b8d;
+
+    background:#245784;
 
     color:white;
+
 
 }
 
@@ -168,11 +387,14 @@ thead{
 th{
 
 
-    padding:16px;
+    padding:18px;
+
 
     text-align:left;
 
+
     font-size:15px;
+
 
 }
 
@@ -181,14 +403,19 @@ th{
 td{
 
 
-    padding:15px;
+    padding:18px;
+
 
     border-bottom:
+
     1px solid #e5e7eb;
 
-    color:#333;
+
+    vertical-align:middle;
+
 
 }
+
 
 
 
@@ -197,46 +424,139 @@ tbody tr:hover{
 
     background:#f8fafc;
 
+
 }
 
 
 
 
 
-/* ESTADOS */
+
+/* ANCHO COLUMNAS */
+
+
+th:nth-child(1),
+td:nth-child(1){
+
+    width:12%;
+
+}
+
+
+
+th:nth-child(2),
+td:nth-child(2){
+
+    width:12%;
+
+}
+
+
+
+th:nth-child(3),
+td:nth-child(3){
+
+    width:23%;
+
+}
+
+
+
+th:nth-child(4),
+td:nth-child(4){
+
+    width:15%;
+
+}
+
+
+
+th:nth-child(5),
+td:nth-child(5){
+
+    width:18%;
+
+}
+
+
+
+th:nth-child(6),
+td:nth-child(6){
+
+    width:10%;
+
+}
+
+
+
+th:nth-child(7),
+td:nth-child(7){
+
+    width:20%;
+
+}
+
+
+
+
+
+
+
+
+/* =====================================
+              ESTADOS
+===================================== */
 
 
 .estado-activo{
 
 
+    display:inline-block;
+
+
     background:#dcfce7;
+
 
     color:#15803d;
 
-    padding:7px 14px;
+
+    padding:8px 15px;
+
 
     border-radius:20px;
 
+
     font-weight:bold;
+
 
     font-size:14px;
 
+
 }
+
 
 
 
 .estado-inactivo{
 
 
+    display:inline-block;
+
+
     background:#fee2e2;
+
 
     color:#b91c1c;
 
-    padding:7px 14px;
+
+    padding:8px 15px;
+
 
     border-radius:20px;
 
+
     font-weight:bold;
+
 
 }
 
@@ -245,7 +565,10 @@ tbody tr:hover{
 
 
 
-/* BOTONES TABLA */
+
+/* =====================================
+              ACCIONES
+===================================== */
 
 
 .btn-editar{
@@ -253,17 +576,27 @@ tbody tr:hover{
 
     background:#2563eb;
 
+
     color:white;
+
 
     border:none;
 
+
     padding:10px 18px;
+
 
     border-radius:8px;
 
+
     cursor:pointer;
 
+
+    font-weight:bold;
+
+
     margin-right:8px;
+
 
 }
 
@@ -271,9 +604,12 @@ tbody tr:hover{
 
 .btn-editar:hover{
 
+
     background:#1d4ed8;
 
+
 }
+
 
 
 
@@ -284,65 +620,34 @@ tbody tr:hover{
 
     background:#ef4444;
 
+
     color:white;
+
 
     border:none;
 
+
     padding:10px 18px;
+
 
     border-radius:8px;
 
+
     cursor:pointer;
 
-}
 
+    font-weight:bold;
+
+
+}
 
 
 
 .btn-desactivar:hover{
 
+
     background:#dc2626;
 
-}
-
-
-
-
-
-
-
-/* FORMULARIO */
-
-#formularioUsuario{
-
-
-    margin-top:25px;
-
-    padding:25px;
-
-    background:#f8fafc;
-
-    border-radius:15px;
-
-}
-
-
-
-
-input,select{
-
-
-    width:100%;
-
-    padding:12px;
-
-    margin:8px 0;
-
-    border:1px solid #cbd5e1;
-
-    border-radius:8px;
-
-    font-size:15px;
 
 }
 
@@ -351,21 +656,33 @@ input,select{
 
 
 
-.btn-guardar{
+/* =====================================
+              RESPONSIVE
+===================================== */
 
 
-    background:#22c55e;
+@media(max-width:900px){
 
-    color:white;
 
-    padding:12px 25px;
+.container{
 
-    border:none;
 
-    border-radius:8px;
+    width:95%;
 
-    cursor:pointer;
+    padding:20px;
 
-    font-weight:bold;
+
+}
+
+
+
+table{
+
+
+    font-size:13px;
+
+
+}
+
 
 }
