@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Búsqueda general | COEMSA</title>
+
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      color: #17324d;
+      background: #f1f5f9;
+    }
+    header {
+      padding: 28px;
+      background: #123454;
+      color: white;
+    }
+    header h1 { margin-top: 0; }
+    header a { color: white; }
+    main {
+      max-width: 1300px;
+      margin: 28px auto;
+      padding: 0 20px;
+    }
+    section {
+      padding: 24px;
+      border-radius: 14px;
+      background: white;
+    }
+    form, .paginas, .acciones {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+    }
+    label {
+      display: block;
+      width: 100%;
+      font-weight: bold;
+    }
+    input {
+      flex: 1;
+      min-width: 200px;
+      padding: 13px;
+      border: 1px solid #b9cbd9;
+      border-radius: 8px;
+      font: inherit;
+    }
+    button, .boton {
+      padding: 12px 16px;
+      border: 0;
+      border-radius: 8px;
+      background: #245b83;
+      color: white;
+      font: inherit;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    :focus-visible { outline: 3px solid #e6a700; outline-offset: 3px; }
+    p { line-height: 1.6; }
+    .tabla { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td {
+      padding: 14px;
+      border-bottom: 1px solid #e2e8f0;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #edf3f8; }
+    td:first-child { min-width: 220px; overflow-wrap: anywhere; }
+    .paginas { justify-content: flex-end; margin-top: 22px; }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>COEMSA · Búsqueda general</h1>
+    <a href="/documentos.html">Volver a las carpetas</a>
+  </header>
+
+  <main>
+    <section>
+      <p>
+        Busca por nombre, descripción, cliente, unidad, proyecto,
+        carpeta, autor o estado.
+      </p>
+
+      <form id="formulario">
+        <label for="termino">¿Qué documento necesitas?</label>
+        <input
+          id="termino"
+          type="search"
+          minlength="2"
+          maxlength="150"
+          placeholder="Ejemplo: tendido de cable"
+          required
+          disabled
+        >
+        <button id="buscar" type="submit" disabled>Buscar</button>
+      </form>
+
+      <p id="mensaje" role="status" aria-live="polite">
+        Comprobando sesión…
+      </p>
+
+      <div class="tabla">
+        <table>
+          <thead>
+            <tr>
+              <th>Documento</th>
+              <th>Ubicación</th>
+              <th>Subido por</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="resultados"></tbody>
+        </table>
+      </div>
+
+      <div class="paginas">
+        <button id="anterior" type="button" disabled>Anterior</button>
+        <span id="pagina">Página 1</span>
+        <button id="siguiente" type="button" disabled>Siguiente</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/auth.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    let pagina = 1;
+    let hayMas = false;
+    let ocupado = false;
+    let consulta = "";
+
+    function controles() {
+      $("buscar").disabled = ocupado;
+      $("termino").disabled = ocupado;
+      $("anterior").disabled = ocupado || pagina <= 1;
+      $("siguiente").disabled = ocupado || !hayMas;
+      $("pagina").textContent = "Página " + pagina;
+    }
+
+    function mostrar(documentos) {
+      $("resultados").replaceChildren();
+
+      for (const documento of documentos) {
+        const fila = document.createElement("tr");
+
+        const ubicacion = [
+          documento.nombre_cliente,
+          documento.nombre_unidad,
+          documento.nombre_proyecto || documento.nombre_area,
+          documento.nombre_carpeta
+        ].filter(Boolean).join(" / ");
+
+        const valores = [
+          documento.nombre_archivo,
+          ubicacion || "Pendiente de clasificación",
+          documento.subido_por || "Sin registro",
+          documento.estado_documento || "Sin estado"
+        ];
+
+        for (const valor of valores) {
+          const celda = document.createElement("td");
+          celda.textContent = valor;
+          fila.appendChild(celda);
+        }
+
+        const celda = document.createElement("td");
+        const acciones = document.createElement("div");
+        acciones.className = "acciones";
+
+        const id = encodeURIComponent(documento.id_documento);
+
+        const ver = document.createElement("a");
+        ver.className = "boton";
+        ver.textContent = "Ver";
+        ver.href = "/documentos/" + id + "/ver";
+        ver.target = "_blank";
+        ver.rel = "noopener noreferrer";
+
+        const descargar = document.createElement("a");
+        descargar.className = "boton";
+        descargar.textContent = "Descargar";
+        descargar.href = "/documentos/" + id + "/ver?descargar=1";
+        descargar.target = "_blank";
+        descargar.rel = "noopener noreferrer";
+
+        acciones.append(ver, descargar);
+        celda.appendChild(acciones);
+        fila.appendChild(celda);
+        $("resultados").appendChild(fila);
+      }
+    }
+
+    async function buscar(numero, texto) {
+      if (ocupado) return;
+
+      ocupado = true;
+      hayMas = false;
+      $("resultados").replaceChildren();
+      $("mensaje").textContent = "Buscando en todo el sistema…";
+      controles();
+
+      try {
+        const parametros = new URLSearchParams({
+          q: texto,
+          pagina: String(numero)
+        });
+
+        const respuesta = await fetch("/documentos/buscar?" + parametros, {
+          credentials: "same-origin",
+          cache: "no-store"
+        });
+
+        if (respuesta.status === 401) {
+          location.replace("/login.html");
+          return;
+        }
+
+        const datos = await respuesta.json();
+
+        if (!respuesta.ok || !datos.success) {
+          throw new Error(datos.mensaje || "No se pudo buscar.");
+        }
+
+        pagina = datos.pagina;
+        consulta = texto;
+        hayMas = datos.hay_mas;
+
+        mostrar(datos.documentos);
+
+        $("mensaje").textContent = datos.documentos.length
+          ? datos.documentos.length +
+            " resultado(s) en esta página." +
+            (hayMas ? " Hay más resultados en la siguiente." : "")
+          : "No se encontraron documentos.";
+      } catch (error) {
+        $("mensaje").textContent =
+          error.message || "No se pudo conectar con el servidor.";
+      } finally {
+        ocupado = false;
+        controles();
+      }
+    }
+
+    $("formulario").addEventListener("submit", (evento) => {
+      evento.preventDefault();
+
+      const texto = $("termino").value.trim();
+
+      if (texto.length < 2) {
+        $("mensaje").textContent = "Escribe al menos dos caracteres.";
+        return;
+      }
+
+      buscar(1, texto);
+    });
+
+    $("anterior").addEventListener("click", () => {
+      if (pagina > 1) buscar(pagina - 1, consulta);
+    });
+
+    $("siguiente").addEventListener("click", () => {
+      if (hayMas) buscar(pagina + 1, consulta);
+    });
+
+    async function iniciar() {
+      try {
+        const usuario = await verificarSesion();
+        if (!usuario) return;
+
+        $("mensaje").textContent =
+          "Escribe tu búsqueda y presiona Enter o el botón Buscar.";
+
+        controles();
+      } catch {
+        $("mensaje").textContent =
+          "No se pudo comprobar la sesión. Actualiza la página.";
+      }
+    }
+
+    iniciar();
+  </script>
+</body>
+</html>

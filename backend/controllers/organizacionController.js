@@ -42,7 +42,9 @@ exports.consultar = async (req, res) => {
   try {
     const usuario = req.usuario;
 
-    const esUsuario = usuario.nombre_rol === "Usuario";
+    // Todos los roles autorizados pueden consultar la organización.
+    // El cálculo de permisos de subida se conserva.
+    const esUsuario = false;
     const esAdministrador =
       usuario.nombre_rol === "Administrador";
 
@@ -209,6 +211,93 @@ exports.consultar = async (req, res) => {
     return res.status(500).json({
       success: false,
       mensaje: "No se pudo cargar la organización de carpetas."
+    });
+  }
+};
+
+// Búsqueda general para las cuentas activas autorizadas por la ruta.
+exports.buscarGeneral = async (req, res) => {
+  const termino = typeof req.query.q === "string"
+    ? req.query.q.trim()
+    : "";
+
+  const pagina = Number(req.query.pagina || 1);
+
+  if (
+    termino.length < 2 ||
+    termino.length > 150 ||
+    !Number.isSafeInteger(pagina) ||
+    pagina < 1 ||
+    pagina > 1000000
+  ) {
+    return res.status(400).json({
+      success: false,
+      mensaje: "Escribe entre 2 y 150 caracteres y una página válida."
+    });
+  }
+
+  try {
+    const [filas] = await pool.query(`
+      SELECT
+        d.id_documento,
+        d.nombre_archivo,
+        d.descripcion,
+        d.fecha_subida,
+        d.estado_documento,
+        c.nombre_carpeta,
+        p.nombre_proyecto,
+        a.nombre_area,
+        cl.nombre_cliente,
+        uc.nombre_unidad,
+        CONCAT_WS(' ', u.nombre, u.apellido) AS subido_por
+      FROM documentos d
+      LEFT JOIN carpetas_documentos c
+        ON c.id_carpeta = d.id_carpeta
+      LEFT JOIN servicios_proyectos s
+        ON s.id_servicio = c.id_servicio
+      LEFT JOIN proyectos p
+        ON p.id_proyecto = COALESCE(d.id_proyecto, s.id_proyecto)
+      LEFT JOIN areas a
+        ON a.id_area = COALESCE(d.id_area, s.id_area)
+      LEFT JOIN proyecto_unidad pu
+        ON pu.id_proyecto = p.id_proyecto
+      LEFT JOIN unidades_clientes uc
+        ON uc.id_unidad = pu.id_unidad
+      LEFT JOIN clientes cl
+        ON cl.id_cliente = uc.id_cliente
+      LEFT JOIN usuarios u
+        ON u.id_usuario = d.id_usuario
+      WHERE INSTR(
+        LOWER(CONCAT_WS(' ',
+          d.nombre_archivo,
+          d.descripcion,
+          d.estado_documento,
+          c.nombre_carpeta,
+          p.nombre_proyecto,
+          a.nombre_area,
+          cl.nombre_cliente,
+          uc.nombre_unidad,
+          u.nombre,
+          u.apellido
+        )),
+        LOWER(?)
+      ) > 0
+      ORDER BY d.fecha_subida DESC, d.id_documento DESC
+      LIMIT 101 OFFSET ?
+    `, [termino, (pagina - 1) * 100]);
+
+    return res.json({
+      success: true,
+      documentos: filas.slice(0, 100),
+      pagina,
+      hay_mas: filas.length > 100
+    });
+  } catch (error) {
+    console.error("Error búsqueda general:", error.code || "ERROR_INTERNO");
+
+    return res.status(500).json({
+      success: false,
+      mensaje: "No se pudo completar la búsqueda."
     });
   }
 };

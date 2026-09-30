@@ -45,6 +45,7 @@ let subidasActivas = 0;
 
 // Nueva consulta de organización.
 router.get("/organizacion", organizacion.consultar);
+router.get("/buscar", organizacion.buscarGeneral);
 
 // Operaciones existentes.
 router.get("/", controlador.listarDocumentos);

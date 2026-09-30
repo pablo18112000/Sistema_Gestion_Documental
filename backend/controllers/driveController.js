@@ -55,42 +55,17 @@ function responderError(res, error) {
 // PERMISOS DE LECTURA
 // =====================================
 
+
 function filtroLectura(usuario) {
-  if (usuario.nombre_rol !== "Usuario") {
-    return { sql: "1 = 1", parametros: [] };
+  const roles = ["Administrador", "Supervisor", "Usuario"];
+
+  if (!usuario || !roles.includes(usuario.nombre_rol)) {
+    throw fallo(403, "Tu cuenta no tiene permiso de consulta.");
   }
 
-  return {
-    sql: `
-      (
-        d.id_proyecto IS NULL
-        OR s.id_proyecto IS NULL
-        OR d.id_proyecto = s.id_proyecto
-      )
-      AND (
-        (
-          COALESCE(d.id_proyecto, s.id_proyecto) IS NOT NULL
-          AND EXISTS (
-            SELECT 1
-            FROM usuario_proyectos up
-            WHERE up.id_usuario = ?
-              AND up.id_proyecto =
-                COALESCE(d.id_proyecto, s.id_proyecto)
-          )
-        )
-        OR (
-          COALESCE(d.id_proyecto, s.id_proyecto) IS NULL
-          AND COALESCE(d.id_area, s.id_area) = ?
-          AND (
-            d.id_area IS NULL
-            OR s.id_area IS NULL
-            OR d.id_area = s.id_area
-          )
-        )
-      )
-    `,
-    parametros: [usuario.id_usuario, usuario.id_area]
-  };
+  // Las rutas mantienen la comprobación de sesión y cuenta activa.
+  // Esta regla solo amplía la lectura.
+  return { sql: "1 = 1", parametros: [] };
 }
 
 const consultaDocumentos = `
@@ -441,7 +416,8 @@ exports.verDocumento = async (req, res, next) => {
         "Cache-Control": "private, no-store",
         "Content-Type": "application/pdf",
         "Content-Disposition":
-          'inline; filename="documento-' + documento.id_documento + '.pdf"',
+          (req.query.descargar === "1" ? "attachment" : "inline") +
+          '; filename="documento-' + documento.id_documento + '.pdf"',
         "X-Content-Type-Options": "nosniff",
         "X-Frame-Options": "SAMEORIGIN"
       });
