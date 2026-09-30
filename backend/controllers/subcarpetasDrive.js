@@ -1,3 +1,4 @@
+const jerarquia = require("./jerarquiaDrive");
 const drive = require("../config/googleDrive");
 
 function fallo(status, mensaje) {
@@ -297,7 +298,11 @@ exports.asegurarEnDrive = async (conexion, carpeta) => {
 
   await verificarCarpeta(raiz, null);
 
-  let padreDrive = raiz;
+  let padreDrive = await jerarquia.prepararPadre(
+    conexion,
+    carpeta,
+    raiz
+  );
 
   for (const nivel of niveles) {
     let idDrive = nivel.id_drive;
