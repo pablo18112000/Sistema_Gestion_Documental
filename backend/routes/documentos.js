@@ -2,6 +2,7 @@ const express = require("express");
 const multer = require("multer");
 
 const controlador = require("../controllers/driveController");
+const organizacion = require("../controllers/organizacionController");
 
 const {
   verificarSesion,
@@ -40,9 +41,12 @@ const recibirPDF = multer({
   }
 }).single("archivo");
 
-// Límite por proceso para evitar acumular archivos en memoria.
 let subidasActivas = 0;
 
+// Nueva consulta de organización.
+router.get("/organizacion", organizacion.consultar);
+
+// Operaciones existentes.
 router.get("/", controlador.listarDocumentos);
 router.get("/destinos", controlador.destinos);
 router.get("/:id/ver", controlador.verDocumento);
@@ -90,7 +94,6 @@ router.post(
   }
 );
 
-// Evita usar el formulario antiguo con IDs escritos manualmente.
 router.post(["/subir", "/subir-drive"], (req, res) => {
   res.status(409).json({
     success: false,

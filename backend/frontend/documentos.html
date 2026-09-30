@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <title>Documentos — COEMSA</title>
+  <title>Archivo documental | COEMSA</title>
 
   <style>
     * { box-sizing: border-box; }
@@ -12,67 +11,136 @@
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: #f2f6fa;
+      background: #f1f5f9;
       color: #19354d;
     }
 
     header {
-      padding: 24px;
-      background: #245b86;
+      background: #123454;
       color: white;
+      padding: 26px;
     }
 
-    h1 { margin: 0 0 18px; }
+    header h1 { margin: 0 0 10px; }
 
-    nav {
+    header p {
+      margin: 0 0 22px;
+      color: #d5e4ef;
+    }
+
+    nav, .acciones, .ruta {
       display: flex;
-      gap: 16px;
-      align-items: center;
       flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
     }
 
-    nav a { color: white; }
+    header a { color: white; }
 
     main {
-      max-width: 1450px;
+      max-width: 1300px;
       margin: 28px auto;
-      padding: 0 18px;
+      padding: 0 20px;
     }
 
-    section {
-      padding: 24px;
+    button, .boton {
+      display: inline-block;
+      padding: 11px 16px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
       background: white;
-      border-radius: 14px;
+      color: #173454;
+      font: inherit;
+      text-decoration: none;
+      cursor: pointer;
     }
 
-    button {
-      padding: 10px 16px;
-      border: none;
-      border-radius: 7px;
-      cursor: pointer;
-      font: inherit;
-    }
+    button:hover, .boton:hover { background: #eaf2f8; }
 
     button:disabled {
-      opacity: .5;
+      opacity: .55;
       cursor: not-allowed;
     }
 
-    .herramientas {
+    a:focus-visible, button:focus-visible, input:focus-visible {
+      outline: 3px solid #e6a700;
+      outline-offset: 3px;
+    }
+
+    .ruta {
+      padding: 16px;
+      background: white;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+
+    .ruta button {
+      border: none;
+      padding: 5px 8px;
+      color: #075985;
+    }
+
+    .cabecera {
       display: flex;
-      gap: 12px;
-      align-items: center;
       flex-wrap: wrap;
-      margin-bottom: 18px;
+      justify-content: space-between;
+      gap: 15px;
+      align-items: center;
+    }
+
+    h2 { margin-bottom: 8px; }
+
+    .nota { color: #526577; line-height: 1.6; }
+
+    .carpetas {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .carpeta {
+      text-align: left;
+      padding: 24px;
+      min-height: 130px;
+      border-radius: 14px;
+      box-shadow: 0 3px 12px #12345408;
+    }
+
+    .icono {
+      display: block;
+      font-size: 30px;
+      margin-bottom: 12px;
+    }
+
+    .nombre {
+      display: block;
+      font-weight: bold;
+      font-size: 17px;
+      overflow-wrap: anywhere;
+    }
+
+    .detalle {
+      display: block;
+      margin-top: 9px;
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .documentos {
+      padding: 22px;
+      border-radius: 14px;
+      background: white;
+      margin-bottom: 24px;
     }
 
     input {
-      padding: 11px;
-      border: 1px solid #bbc9d5;
-      border-radius: 7px;
-      font: inherit;
       width: 100%;
-      max-width: 460px;
+      max-width: 440px;
+      padding: 12px;
+      border: 1px solid #b8c8d6;
+      border-radius: 8px;
+      font: inherit;
     }
 
     .tabla { overflow-x: auto; }
@@ -80,90 +148,52 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      text-align: left;
+      margin-top: 20px;
     }
 
     th, td {
       padding: 13px;
-      border-bottom: 1px solid #dce5ed;
-      vertical-align: top;
+      border-bottom: 1px solid #e2e8f0;
+      text-align: left;
     }
 
-    th {
-      background: #eaf1f7;
-      white-space: nowrap;
-    }
+    th { background: #edf3f8; }
 
     td:first-child {
       min-width: 220px;
-      max-width: 380px;
       overflow-wrap: anywhere;
     }
 
     .estado {
       display: inline-block;
       padding: 5px 9px;
-      border-radius: 14px;
+      border-radius: 15px;
       background: #edf0f4;
-      white-space: nowrap;
     }
 
-    .aprobado { background: #dff5e6; color: #146c38; }
-    .rechazado { background: #ffe3e3; color: #a42020; }
-    .pendiente { background: #fff2cc; color: #775500; }
+    .aprobado { background: #dcfce7; color: #166534; }
+    .pendiente { background: #fef3c7; color: #854d0e; }
+    .rechazado { background: #fee2e2; color: #991b1b; }
 
-    .paginacion {
-      display: flex;
-      gap: 14px;
-      align-items: center;
-      justify-content: flex-end;
-      flex-wrap: wrap;
-      margin-top: 20px;
+    #mensaje {
+      min-height: 24px;
+      line-height: 1.6;
     }
 
-    #mensaje { min-height: 24px; }
-
-    .nota {
-      color: #526577;
-      line-height: 1.5;
-    }
+    [hidden] { display: none !important; }
   </style>
 </head>
 
 <body>
-
-<nav
-  id="accesos-documentales-coemsa"
-  aria-label="Accesos de documentos"
-  style="display:flex;flex-wrap:wrap;gap:18px;padding:16px 24px;background:#eaf1f7;"
->
-  <a href="/subir_documento.html">Subir PDF</a>
-  <a href="/documentos.html">Ver documentos</a>
-  <a href="/proyectos.html">Proyectos</a>
-  
-</nav>
-<style>
-  #accesos-documentales-coemsa a {
-    color: #17324d;
-    font-weight: bold;
-  }
-
-  #accesos-documentales-coemsa a:focus-visible {
-    outline: 3px solid #e6a700;
-    outline-offset: 3px;
-  }
-</style>
-
   <header>
-    <h1>📄 Documentos COEMSA</h1>
+    <h1>COEMSA · Archivo documental</h1>
+    <p>Documentos organizados por áreas, clientes, unidades y proyectos.</p>
 
-    <nav>
+    <nav aria-label="Menú principal">
       <a id="volver" href="/login.html">Volver al panel</a>
-      <a href="/proyectos.html">Proyectos</a>
-
-      <button type="button" onclick="cerrarSesion()">
-        Cerrar sesión
-      </button>
+      <a href="/subir_documento.html">Subir PDF</a>
+      <a id="proyectos" href="/proyectos.html">Proyectos</a>
+      <button id="salir" type="button">Cerrar sesión</button>
     </nav>
   </header>
 
@@ -172,59 +202,46 @@
       Comprobando sesión...
     </p>
 
-    <section>
-      <h2>Documentos disponibles</h2>
-
-      <p class="nota">
-        Se muestran los documentos disponibles según tu rol y asignaciones.
-        Puedes subir PDF de hasta 10 MB desde el acceso Subir PDF.
-      </p>
-
-      <div class="herramientas">
-        <label for="buscar">Buscar en esta página:</label>
-
-        <input
-          id="buscar"
-          type="search"
-          placeholder="Nombre, proyecto, área o estado"
-          disabled
-        >
-
-        <button id="actualizar" type="button" disabled>
-          Actualizar
-        </button>
+    <div class="cabecera">
+      <div>
+        <h2 id="titulo">Organización documental</h2>
+        <p id="descripcion" class="nota"></p>
       </div>
 
-      <p id="contador"></p>
+      <button id="actualizar" type="button" disabled>
+        Actualizar
+      </button>
+    </div>
+
+    <nav id="ruta" class="ruta" aria-label="Ubicación actual"></nav>
+
+    <div id="carpetas" class="carpetas"></div>
+
+    <section id="documentos" class="documentos" hidden>
+      <h2>Documentos de esta carpeta</h2>
+
+      <label for="buscar">Buscar documento:</label>
+      <input
+        id="buscar"
+        type="search"
+        placeholder="Nombre, autor o estado"
+      >
+
+      <p id="contador" class="nota"></p>
 
       <div class="tabla">
         <table>
           <thead>
             <tr>
-              <th scope="col">Archivo</th>
-              <th scope="col">Proyecto o área</th>
-              <th scope="col">Carpeta</th>
-              <th scope="col">Subido por</th>
-              <th scope="col">Fecha</th>
-              <th scope="col">Versión</th>
-              <th scope="col">Estado</th>
+              <th>Documento</th>
+              <th>Subido por</th>
+              <th>Fecha</th>
+              <th>Estado</th>
+              <th>Acción</th>
             </tr>
           </thead>
-
-          <tbody id="listaDocumentos"></tbody>
+          <tbody id="filas"></tbody>
         </table>
-      </div>
-
-      <div class="paginacion">
-        <button id="anterior" type="button" disabled>
-          Anterior
-        </button>
-
-        <span id="paginaActual">Página 1</span>
-
-        <button id="siguiente" type="button" disabled>
-          Siguiente
-        </button>
       </div>
     </section>
   </main>
@@ -232,18 +249,14 @@
   <script src="/js/auth.js"></script>
 
   <script>
-    const mensaje = document.getElementById("mensaje");
-    const lista = document.getElementById("listaDocumentos");
-    const buscar = document.getElementById("buscar");
-    const actualizar = document.getElementById("actualizar");
-    const anterior = document.getElementById("anterior");
-    const siguiente = document.getElementById("siguiente");
+    const $ = (id) => document.getElementById(id);
 
+    let secciones = [];
+    let carpetas = [];
     let documentos = [];
-    let pagina = 1;
-    let hayMas = false;
+    let documentosActuales = [];
+    let pasos = [];
     let cargando = false;
-    let cargaValida = false;
 
     function normalizar(valor) {
       return String(valor ?? "")
@@ -252,204 +265,462 @@
         .toLowerCase();
     }
 
-    function destino(documento) {
-      if (documento.id_proyecto != null) {
-        return documento.nombre_proyecto ||
-          "Proyecto sin nombre disponible";
-      }
-
-      return documento.nombre_area || "Sin clasificar";
+    function mismo(a, b) {
+      return a != null && b != null && String(a) === String(b);
     }
 
-    function fechaLocal(valor) {
-      if (!valor) return "Sin fecha";
+    async function consultar(url) {
+      const respuesta = await fetch(url, {
+        credentials: "same-origin",
+        cache: "no-store"
+      });
 
-      const fecha = new Date(valor);
-
-      if (Number.isNaN(fecha.getTime())) {
-        return "Fecha no disponible";
+      if (respuesta.status === 401) {
+        window.location.replace("/login.html");
+        throw new Error("La sesión terminó.");
       }
 
-      return fecha.toLocaleString("es-PE", {
-        timeZone: "America/Lima",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit"
+      const datos = await respuesta.json();
+
+      if (!respuesta.ok || !datos.success) {
+        throw new Error(datos.mensaje || "No se pudo cargar la información.");
+      }
+
+      return datos;
+    }
+
+    function abrir(paso) {
+      pasos.push(paso);
+      $("buscar").value = "";
+      dibujar();
+    }
+
+    function tarjeta(nombre, detalle, accion) {
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.className = "carpeta";
+
+      const icono = document.createElement("span");
+      icono.className = "icono";
+      icono.textContent = "📁";
+      icono.setAttribute("aria-hidden", "true");
+
+      const titulo = document.createElement("span");
+      titulo.className = "nombre";
+      titulo.textContent = nombre;
+
+      const texto = document.createElement("span");
+      texto.className = "detalle";
+      texto.textContent = detalle;
+
+      boton.append(icono, titulo, texto);
+      boton.addEventListener("click", accion);
+      $("carpetas").appendChild(boton);
+    }
+
+    function grupos(filas, campoId, campoNombre) {
+      const resultado = new Map();
+
+      for (const fila of filas) {
+        if (fila[campoId] == null) continue;
+
+        resultado.set(String(fila[campoId]), {
+          id: fila[campoId],
+          nombre: fila[campoNombre] || "Sin nombre"
+        });
+      }
+
+      return [...resultado.values()].sort((a, b) =>
+        a.nombre.localeCompare(b.nombre, "es")
+      );
+    }
+
+    function dibujarRuta() {
+      $("ruta").replaceChildren();
+
+      const inicio = document.createElement("button");
+      inicio.type = "button";
+      inicio.textContent = "COEMSA";
+      inicio.addEventListener("click", () => {
+        pasos = [];
+        $("buscar").value = "";
+        dibujar();
+      });
+
+      $("ruta").appendChild(inicio);
+
+      pasos.forEach((paso, indice) => {
+        const separador = document.createElement("span");
+        separador.textContent = "›";
+
+        const boton = document.createElement("button");
+        boton.type = "button";
+        boton.textContent = paso.nombre;
+
+        boton.addEventListener("click", () => {
+          pasos = pasos.slice(0, indice + 1);
+          $("buscar").value = "";
+          dibujar();
+        });
+
+        $("ruta").append(separador, boton);
       });
     }
 
-    function actualizarBotones() {
-      actualizar.disabled = cargando;
-      buscar.disabled = cargando || !cargaValida;
+    function listarCarpetas(filas) {
+      // Si el padre no está en este conjunto, mostrar la carpeta
+      // como entrada disponible sin revelar otros destinos.
+      const ids = new Set(filas.map((f) => String(f.id_carpeta)));
 
-      anterior.disabled =
-        cargando || pagina <= 1;
+      const principales = filas.filter((f) =>
+        f.id_carpeta_padre == null ||
+        !ids.has(String(f.id_carpeta_padre))
+      );
 
-      siguiente.disabled =
-        cargando || !cargaValida || !hayMas;
+      for (const carpeta of principales) {
+        tarjeta(
+          carpeta.nombre_carpeta,
+          "Abrir carpeta",
+          () => abrir({
+            tipo: "carpeta",
+            id: carpeta.id_carpeta,
+            nombre: carpeta.nombre_carpeta
+          })
+        );
+      }
 
-      document.getElementById("paginaActual").textContent =
-        "Página " + pagina;
+      if (!principales.length) {
+        $("descripcion").textContent =
+          "Todavía no hay carpetas disponibles en esta ubicación.";
+      }
+    }
+
+    function seleccionarDocumentos(ids) {
+      const permitidas = new Set(ids.map(String));
+
+      documentosActuales = documentos.filter((d) =>
+        permitidas.has(String(d.id_carpeta))
+      );
+
+      $("documentos").hidden = false;
+      mostrarDocumentos();
+    }
+
+    function dibujar() {
+      $("carpetas").replaceChildren();
+      $("documentos").hidden = true;
+      $("descripcion").textContent = "";
+      dibujarRuta();
+
+      const actual = pasos[pasos.length - 1];
+
+      $("titulo").textContent = actual
+        ? actual.nombre
+        : "Organización documental";
+
+      if (!actual) {
+        $("descripcion").textContent =
+          "Selecciona una sección. Se respetan tus permisos actuales.";
+
+        for (const seccion of secciones) {
+          tarjeta(
+            seccion.nombre,
+            "Abrir sección",
+            () => abrir({
+              tipo: "seccion",
+              id: seccion.clave,
+              nombre: seccion.nombre
+            })
+          );
+        }
+
+        return;
+      }
+
+      if (actual.tipo === "seccion") {
+        const filas = carpetas.filter((c) => c.seccion === actual.id);
+
+        if (actual.id === "logistica") {
+          $("descripcion").textContent =
+            "Logística se mantiene como una sola carpeta por ahora.";
+
+          seleccionarDocumentos(filas.map((c) => c.id_carpeta));
+          return;
+        }
+
+        if (actual.id === "servicios") {
+          for (const cliente of grupos(
+            filas,
+            "id_cliente",
+            "nombre_cliente"
+          )) {
+            tarjeta(cliente.nombre, "Ver unidades", () => abrir({
+              tipo: "cliente",
+              id: cliente.id,
+              nombre: cliente.nombre
+            }));
+          }
+
+          const sinCliente = filas.filter((c) => c.id_cliente == null);
+
+          if (sinCliente.length) {
+            tarjeta(
+              "Pendientes de clasificación",
+              "Carpetas y proyectos existentes sin cliente o unidad",
+              () => abrir({
+                tipo: "pendientes",
+                nombre: "Pendientes de clasificación"
+              })
+            );
+          }
+
+          if (!filas.length) {
+            $("descripcion").textContent =
+              "No tienes carpetas de proyectos disponibles.";
+          }
+
+          return;
+        }
+
+        listarCarpetas(filas);
+        return;
+      }
+
+      if (actual.tipo === "cliente") {
+        const filas = carpetas.filter((c) =>
+          mismo(c.id_cliente, actual.id)
+        );
+
+        for (const unidad of grupos(
+          filas,
+          "id_unidad",
+          "nombre_unidad"
+        )) {
+          tarjeta(unidad.nombre, "Ver proyectos", () => abrir({
+            tipo: "unidad",
+            id: unidad.id,
+            nombre: unidad.nombre
+          }));
+        }
+
+        return;
+      }
+
+      if (actual.tipo === "unidad") {
+        const filas = carpetas.filter((c) =>
+          mismo(c.id_unidad, actual.id)
+        );
+
+        for (const proyecto of grupos(
+          filas,
+          "id_proyecto",
+          "nombre_proyecto"
+        )) {
+          tarjeta(proyecto.nombre, "Ver carpetas", () => abrir({
+            tipo: "proyecto",
+            id: proyecto.id,
+            nombre: proyecto.nombre
+          }));
+        }
+
+        return;
+      }
+
+      if (actual.tipo === "proyecto") {
+        listarCarpetas(carpetas.filter((c) =>
+          mismo(c.id_proyecto, actual.id)
+        ));
+        return;
+      }
+
+      if (actual.tipo === "pendientes") {
+        $("descripcion").textContent =
+          "Estos registros conservan su ubicación y permisos actuales.";
+
+        listarCarpetas(carpetas.filter((c) =>
+          c.seccion === "servicios" && c.id_cliente == null
+        ));
+
+        return;
+      }
+
+      if (actual.tipo === "carpeta") {
+        const hijas = carpetas.filter((c) =>
+          mismo(c.id_carpeta_padre, actual.id)
+        );
+
+        for (const hija of hijas) {
+          tarjeta(hija.nombre_carpeta, "Abrir subcarpeta", () => abrir({
+            tipo: "carpeta",
+            id: hija.id_carpeta,
+            nombre: hija.nombre_carpeta
+          }));
+        }
+
+        seleccionarDocumentos([actual.id]);
+      }
     }
 
     function mostrarDocumentos() {
-      const termino = normalizar(buscar.value.trim());
+      $("filas").replaceChildren();
 
-      const visibles = documentos.filter((documento) => {
-        const contenido = [
-          documento.nombre_archivo,
-          documento.descripcion,
-          destino(documento),
-          documento.nombre_carpeta,
-          documento.subido_por,
-          documento.estado_documento
-        ].join(" ");
+      const termino = normalizar($("buscar").value.trim());
 
-        return normalizar(contenido).includes(termino);
-      });
+      const visibles = documentosActuales.filter((d) =>
+        normalizar([
+          d.nombre_archivo,
+          d.subido_por,
+          d.estado_documento
+        ].join(" ")).includes(termino)
+      );
 
-      lista.replaceChildren();
+      $("contador").textContent =
+        visibles.length + " documento(s) encontrado(s).";
 
-      document.getElementById("contador").textContent =
-        `${visibles.length} de ${documentos.length} documentos de esta página.`;
-
-      if (visibles.length === 0) {
+      if (!visibles.length) {
         const fila = document.createElement("tr");
         const celda = document.createElement("td");
-
-        celda.colSpan = 7;
-        celda.textContent = termino
-          ? "No hay coincidencias en esta página."
-          : "No hay documentos disponibles en esta página.";
-
+        celda.colSpan = 5;
+        celda.textContent = "No hay documentos para mostrar.";
         fila.appendChild(celda);
-        lista.appendChild(fila);
+        $("filas").appendChild(fila);
         return;
       }
 
       for (const documento of visibles) {
         const fila = document.createElement("tr");
+        const fecha = new Date(documento.fecha_subida);
 
         const valores = [
           documento.nombre_archivo,
-          destino(documento),
-          documento.nombre_carpeta || "Sin carpeta",
           documento.subido_por || "Sin registro",
-          fechaLocal(documento.fecha_subida),
-          documento.version || "—"
+          documento.fecha_subida && !Number.isNaN(fecha.getTime())
+            ? fecha.toLocaleString("es-PE", {
+                timeZone: "America/Lima"
+              })
+            : "Sin fecha"
         ];
 
         for (const valor of valores) {
           const celda = document.createElement("td");
-          celda.textContent = valor ?? "";
+          celda.textContent = valor;
           fila.appendChild(celda);
         }
 
-        const celdaEstado = document.createElement("td");
-        const etiqueta = document.createElement("span");
+        const estadoCelda = document.createElement("td");
+        const estado = document.createElement("span");
+        const nombreEstado = documento.estado_documento || "Sin estado";
+        const clase = normalizar(nombreEstado).trim();
 
-        const estado = documento.estado_documento || "Sin estado";
-        const clase = normalizar(estado).trim();
+        estado.className = "estado";
 
-        etiqueta.classList.add("estado");
-
-        if (["aprobado", "rechazado", "pendiente"].includes(clase)) {
-          etiqueta.classList.add(clase);
+        if (["aprobado", "pendiente", "rechazado"].includes(clase)) {
+          estado.classList.add(clase);
         }
 
-        etiqueta.textContent = estado;
-        celdaEstado.appendChild(etiqueta);
-        fila.appendChild(celdaEstado);
-        lista.appendChild(fila);
+        estado.textContent = nombreEstado;
+        estadoCelda.appendChild(estado);
+        fila.appendChild(estadoCelda);
+
+        const accion = document.createElement("td");
+        const enlace = document.createElement("a");
+
+        enlace.className = "boton";
+        enlace.textContent = "Ver PDF";
+        enlace.href =
+          "/documentos/" +
+          encodeURIComponent(documento.id_documento) +
+          "/ver";
+        enlace.target = "_blank";
+        enlace.rel = "noopener noreferrer";
+
+        accion.appendChild(enlace);
+        fila.appendChild(accion);
+
+        $("filas").appendChild(fila);
       }
     }
 
-    async function cargarDocumentos(nuevaPagina = pagina) {
+    async function cargar() {
       if (cargando) return;
 
       cargando = true;
-      cargaValida = false;
-      documentos = [];
-      lista.replaceChildren();
-
-      document.getElementById("contador").textContent = "";
-      mensaje.textContent = "Cargando documentos...";
-      actualizarBotones();
+      $("actualizar").disabled = true;
+      $("mensaje").textContent = "Cargando carpetas y documentos...";
+      $("carpetas").replaceChildren();
+      $("documentos").hidden = true;
+      $("ruta").replaceChildren();
 
       try {
-        const respuesta = await fetch(
-          "/documentos?pagina=" + nuevaPagina,
-          {
-            credentials: "same-origin",
-            cache: "no-store"
-          }
-        );
+        const organizacion = await consultar("/documentos/organizacion");
 
-        if (respuesta.status === 401) {
-          localStorage.removeItem("usuario");
-          window.location.replace("/login.html");
-          return;
+        // La API existente entrega 100 documentos por página.
+        // Leemos todas las páginas para no omitir archivos al
+        // seleccionar una carpeta.
+        const archivos = [];
+        let completa = false;
+
+        for (let pagina = 1; pagina <= 100; pagina++) {
+          const datos = await consultar("/documentos?pagina=" + pagina);
+          archivos.push(...datos.documentos);
+
+          if (!datos.hay_mas) {
+            completa = true;
+            break;
+          }
+
+          $("mensaje").textContent =
+            "Cargando documentos: " + archivos.length + "...";
         }
 
-        const datos = await respuesta.json();
-
-        if (!respuesta.ok || !datos.success) {
+        if (!completa) {
           throw new Error(
-            datos.mensaje || "No se pudieron cargar los documentos."
+            "Hay más de 10000 documentos. Debe habilitarse la consulta por carpeta antes de mostrar este explorador."
           );
         }
 
-        documentos = datos.documentos;
-        pagina = datos.pagina;
-        hayMas = datos.hay_mas;
-        cargaValida = true;
+        secciones = organizacion.secciones;
+        carpetas = organizacion.carpetas;
+        documentos = archivos;
+        pasos = [];
 
-        mostrarDocumentos();
-        mensaje.textContent = "";
+        $("buscar").value = "";
+        dibujar();
+
+        $("mensaje").textContent =
+          "Organización cargada. Esta vista no mueve archivos en Drive.";
       } catch (error) {
-        hayMas = false;
-        mensaje.textContent =
-          error.message || "No se pudo conectar con el servidor.";
+        $("mensaje").textContent =
+          error.message || "No se pudo cargar la organización.";
       } finally {
         cargando = false;
-        actualizarBotones();
+        $("actualizar").disabled = false;
       }
     }
 
-    buscar.addEventListener("input", mostrarDocumentos);
-
-    actualizar.addEventListener("click", () => {
-      cargarDocumentos();
-    });
-
-    anterior.addEventListener("click", () => {
-      if (pagina > 1) cargarDocumentos(pagina - 1);
-    });
-
-    siguiente.addEventListener("click", () => {
-      if (hayMas) cargarDocumentos(pagina + 1);
-    });
+    $("buscar").addEventListener("input", mostrarDocumentos);
+    $("actualizar").addEventListener("click", cargar);
+    $("salir").addEventListener("click", cerrarSesion);
 
     async function iniciar() {
-      const usuario = await verificarSesion();
+      try {
+        const usuario = await verificarSesion();
+        if (!usuario) return;
 
-      if (!usuario) {
-        mensaje.textContent = "No se pudo comprobar la sesión.";
-        return;
+        const paneles = {
+          Administrador: "/admin.html",
+          Supervisor: "/supervisor.html",
+          Usuario: "/usuario.html"
+        };
+
+        $("volver").href =
+          paneles[usuario.nombre_rol] || "/login.html";
+
+        await cargar();
+      } catch {
+        $("mensaje").textContent =
+          "No se pudo comprobar la sesión. Actualiza la página.";
       }
-
-      const paneles = {
-        Administrador: "/admin.html",
-        Supervisor: "/supervisor.html",
-        Usuario: "/usuario.html"
-      };
-
-      document.getElementById("volver").href =
-        paneles[usuario.nombre_rol] || "/login.html";
-
-      await cargarDocumentos(1);
     }
 
     iniciar();
