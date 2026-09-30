@@ -20,6 +20,7 @@ function verificarSesion(req, res, next) {
       u.estado,
       u.id_rol,
       u.id_area,
+      u.es_programador,
       r.nombre_rol,
       a.nombre_area
     FROM usuarios u
