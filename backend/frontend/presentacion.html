@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sistema Gestión Documental COEMSA</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+      color: #1e293b;
+      line-height: 1.7;
+    }
+    header {
+      padding: 48px 24px;
+      background: #123454;
+      color: white;
+    }
+    header div, main, footer {
+      max-width: 960px;
+      margin: auto;
+    }
+    h1 { line-height: 1.2; }
+    main { padding: 32px 24px; }
+    section {
+      padding: 24px;
+      margin-bottom: 20px;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+    }
+    h2 { color: #123454; }
+    a { color: #075985; }
+    .boton {
+      display: inline-block;
+      padding: 12px 24px;
+      border-radius: 8px;
+      background: #0369a1;
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    a:focus-visible { outline: 3px solid #f59e0b; }
+    footer {
+      padding: 24px;
+      border-top: 1px solid #cbd5e1;
+    }
+    footer a { display: inline-block; margin-right: 20px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <p>COEMSA</p>
+      <h1>Sistema Gestión Documental COEMSA</h1>
+      <p>Organización y revisión de documentos por áreas y proyectos.</p>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <h2>¿Para qué sirve?</h2>
+      <p>
+        El sistema permite a los usuarios autorizados de COEMSA
+        subir documentos, consultar archivos según sus permisos
+        y gestionar su revisión y aprobación.
+      </p>
+      <ul>
+        <li>Organización de documentos por áreas y proyectos.</li>
+        <li>Acceso según los roles Administrador, Supervisor y Usuario.</li>
+        <li>Revisión, aprobación y rechazo de documentos.</li>
+        <li>Registro de acciones e historial documental.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Integración con Google Drive</h2>
+      <p>
+        El sistema utiliza Google Drive de COEMSA para almacenar
+        y consultar documentos. La cuenta de Google destinada al
+        almacenamiento se conecta mediante una autorización OAuth.
+      </p>
+      <p>
+        Los usuarios ingresan con sus cuentas del sistema COEMSA.
+        La autorización de Google para el almacenamiento se gestiona
+        por separado.
+      </p>
+    </section>
+
+    <section>
+      <h2>Acceso al sistema</h2>
+      <p>
+        El acceso a los documentos requiere una cuenta habilitada
+        y los permisos correspondientes.
+      </p>
+      <a class="boton" href="/login.html">Ingresar al sistema</a>
+    </section>
+
+    <section>
+      <h2>Contacto</h2>
+      <p>
+        Consultas sobre el sistema:
+        <a href="mailto:coemsaingenieros@gmail.com">
+          coemsaingenieros@gmail.com
+        </a>
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    <a href="/privacidad.html">Política de privacidad</a>
+    <a href="/terminos.html">Condiciones de uso</a>
+  </footer>
+</body>
+</html>
