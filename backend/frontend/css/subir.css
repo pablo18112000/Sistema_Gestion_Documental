@@ -1,0 +1,86 @@
+.formulario{
+
+
+width:60%;
+
+margin:auto;
+
+
+}
+
+
+
+.formulario label{
+
+
+display:block;
+
+font-weight:bold;
+
+margin-top:20px;
+
+
+}
+
+
+
+.formulario input,
+.formulario select{
+
+
+width:100%;
+
+padding:12px;
+
+border-radius:8px;
+
+border:1px solid #ccc;
+
+
+}
+
+
+
+.formulario button{
+
+
+margin-top:25px;
+
+background:#22c55e;
+
+color:white;
+
+border:none;
+
+padding:14px 30px;
+
+border-radius:10px;
+
+font-size:16px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+
+}
+
+
+
+.formulario button:hover{
+
+
+background:#16a34a;
+
+
+}
+
+
+#mensaje{
+
+
+margin-top:20px;
+
+font-weight:bold;
+
+}
