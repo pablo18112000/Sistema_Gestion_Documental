@@ -253,6 +253,7 @@
     const $ = (id) => document.getElementById(id);
 
     let secciones = [];
+    let clientes = [];
     let carpetas = [];
     let documentos = [];
     let documentosActuales = [];
@@ -449,18 +450,33 @@
           return;
         }
 
-        if (actual.id === "servicios") {
-          for (const cliente of grupos(
-            filas,
-            "id_cliente",
-            "nombre_cliente"
-          )) {
-            tarjeta(cliente.nombre, "Ver unidades", () => abrir({
-              tipo: "cliente",
-              id: cliente.id,
-              nombre: cliente.nombre
-            }));
-          }
+              if (actual.id === "servicios") {
+  const ordenClientes = [
+    "Volcan",
+    "NEXA",
+    "KOLPA",
+    "LINCUNA",
+    "OREX",
+    "YAURICOCHA",
+    "COLQUISIRI",
+    "HOSPITAL",
+    "OTROS"
+  ];
+
+  const clientesOrdenados = [...clientes].sort((a, b) => {
+    const posicionA = ordenClientes.indexOf(a.nombre_cliente);
+    const posicionB = ordenClientes.indexOf(b.nombre_cliente);
+
+    return posicionA - posicionB;
+  });
+
+  for (const cliente of clientesOrdenados) {
+    tarjeta(cliente.nombre_cliente, "Ver unidades", () => abrir({
+      tipo: "cliente",
+      id: cliente.id_cliente,
+      nombre: cliente.nombre_cliente
+    }));
+  }
 
           const sinCliente = filas.filter((c) => c.id_cliente == null);
 
@@ -712,6 +728,7 @@
         }
 
         secciones = organizacion.secciones;
+        clientes = organizacion.clientes;
         carpetas = organizacion.carpetas;
         documentos = archivos;
         pasos = [];

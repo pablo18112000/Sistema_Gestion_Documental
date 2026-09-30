@@ -80,6 +80,24 @@ exports.consultar = async (req, res) => {
       parametros.push(usuario.id_usuario, usuario.id_area);
     }
 
+    // Clientes principales activos.
+    // Se consultan directamente para que aparezcan aunque
+    // todavía no tengan unidades, proyectos o carpetas.
+    const [clientes] = await pool.query(`
+      SELECT
+        id_cliente,
+        nombre_cliente,
+        estado
+      FROM clientes
+      WHERE estado = 1
+      ORDER BY
+        CASE
+          WHEN UPPER(nombre_cliente) = 'VOLCAN' THEN 0
+          ELSE 1
+        END,
+        nombre_cliente
+    `);
+
     const [filas] = await pool.query(`
       SELECT
         c.id_carpeta,
@@ -200,6 +218,7 @@ exports.consultar = async (req, res) => {
     return res.json({
       success: true,
       secciones: disponibles,
+      clientes,
       carpetas
     });
   } catch (error) {
@@ -293,7 +312,10 @@ exports.buscarGeneral = async (req, res) => {
       hay_mas: filas.length > 100
     });
   } catch (error) {
-    console.error("Error búsqueda general:", error.code || "ERROR_INTERNO");
+    console.error(
+      "Error búsqueda general:",
+      error.code || "ERROR_INTERNO"
+    );
 
     return res.status(500).json({
       success: false,
