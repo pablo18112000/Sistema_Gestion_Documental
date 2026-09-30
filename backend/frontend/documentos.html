@@ -526,10 +526,41 @@
         return;
       }
 
-      if (actual.tipo === "proyecto") {
-        listarCarpetas(carpetas.filter((c) =>
+           if (actual.tipo === "proyecto") {
+        const delProyecto = carpetas.filter((c) =>
           mismo(c.id_proyecto, actual.id)
-        ));
+        );
+
+        const principales = delProyecto.filter((c) =>
+          c.id_carpeta_padre === null
+        );
+
+        if (principales.length === 1) {
+          const principal = principales[0];
+
+          const categorias = delProyecto.filter((c) =>
+            mismo(c.id_carpeta_padre, principal.id_carpeta)
+          );
+
+          for (const categoria of categorias) {
+            tarjeta(
+              categoria.nombre_carpeta,
+              "Abrir categoría",
+              () => abrir({
+                tipo: "carpeta",
+                id: categoria.id_carpeta,
+                nombre: categoria.nombre_carpeta
+              })
+            );
+          }
+
+          // Conserva visibles los documentos todavía guardados
+          // directamente en la carpeta principal.
+          seleccionarDocumentos([principal.id_carpeta]);
+        } else {
+          listarCarpetas(delProyecto);
+        }
+
         return;
       }
 
