@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Proyectos — COEMSA</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f2f6fa;
+      color: #19354d;
+    }
+
+    header {
+      padding: 24px;
+      background: #245b86;
+      color: white;
+    }
+
+    header h1 { margin: 0 0 18px; }
+
+    nav {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    nav a { color: white; }
+
+    main {
+      max-width: 1100px;
+      margin: 28px auto;
+      padding: 0 18px;
+    }
+
+    section {
+      padding: 24px;
+      margin-bottom: 24px;
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 5px 20px #16354d0d;
+    }
+
+    label {
+      display: block;
+      margin: 16px 0 6px;
+      font-weight: bold;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #bbc9d5;
+      border-radius: 7px;
+      font: inherit;
+    }
+
+    textarea { min-height: 90px; }
+
+    button {
+      padding: 11px 18px;
+      border: 0;
+      border-radius: 7px;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .principal {
+      margin-top: 18px;
+      color: white;
+      background: #167447;
+    }
+
+    button:disabled {
+      opacity: .6;
+      cursor: wait;
+    }
+
+    .tabla { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 15px;
+      border-bottom: 1px solid #dce5ed;
+      overflow-wrap: anywhere;
+    }
+
+    th { background: #eaf1f7; }
+
+    #mensaje {
+      min-height: 24px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>📁 Proyectos COEMSA</h1>
+    <nav>
+      <a id="volver" href="/login.html">Volver al panel</a>
+      <button type="button" onclick="cerrarSesion()">
+        Cerrar sesión
+      </button>
+    </nav>
+  </header>
+
+  <main>
+    <p id="mensaje" role="status" aria-live="polite">
+      Comprobando sesión...
+    </p>
+
+    <section id="seccionCrear" hidden>
+      <h2>Nuevo proyecto</h2>
+
+      <form id="formProyecto">
+        <label for="nombre">Nombre del proyecto</label>
+        <input
+          id="nombre"
+          maxlength="100"
+          required
+          placeholder="Escribe el nombre"
+        >
+
+        <label for="descripcion">Descripción</label>
+        <textarea
+          id="descripcion"
+          maxlength="255"
+          placeholder="Descripción opcional"
+        ></textarea>
+
+        <button id="guardar" class="principal" type="submit">
+          Crear proyecto
+        </button>
+      </form>
+    </section>
+
+    <section>
+      <h2>Proyectos disponibles</h2>
+
+      <div class="tabla">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Proyecto</th>
+              <th scope="col">Descripción</th>
+              <th scope="col">Permiso de subida</th>
+            </tr>
+          </thead>
+          <tbody id="listaProyectos"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/auth.js"></script>
+
+  <script>
+    const mensaje = document.getElementById("mensaje");
+    const formulario = document.getElementById("formProyecto");
+    const guardar = document.getElementById("guardar");
+
+    let puedeCrear = false;
+    let guardando = false;
+
+    async function solicitar(url, opciones = {}) {
+      const respuesta = await fetch(url, {
+        ...opciones,
+        credentials: "same-origin",
+        cache: "no-store"
+      });
+
+      if (respuesta.status === 401) {
+        localStorage.removeItem("usuario");
+        window.location.replace("/login.html");
+        throw new Error("Debes iniciar sesión.");
+      }
+
+      const datos = await respuesta.json();
+
+      if (!respuesta.ok || !datos.success) {
+        throw new Error(
+          datos.mensaje || "No se pudo completar la solicitud."
+        );
+      }
+
+      return datos;
+    }
+
+    async function cargarProyectos() {
+      const datos = await solicitar("/proyectos");
+      const lista = document.getElementById("listaProyectos");
+
+      lista.replaceChildren();
+
+      if (datos.proyectos.length === 0) {
+        const fila = document.createElement("tr");
+        const celda = document.createElement("td");
+
+        celda.colSpan = 3;
+        celda.textContent = "No tienes proyectos disponibles.";
+        fila.appendChild(celda);
+        lista.appendChild(fila);
+        return;
+      }
+
+      for (const proyecto of datos.proyectos) {
+        const fila = document.createElement("tr");
+
+        const valores = [
+          proyecto.nombre_proyecto,
+          proyecto.descripcion || "Sin descripción",
+          Number(proyecto.puede_subir) === 1
+            ? "Permitido por tu rol o asignación"
+            : "Solo consulta"
+        ];
+
+        for (const valor of valores) {
+          const celda = document.createElement("td");
+          celda.textContent = valor;
+          fila.appendChild(celda);
+        }
+
+        lista.appendChild(fila);
+      }
+    }
+
+    formulario.addEventListener("submit", async (evento) => {
+      evento.preventDefault();
+
+      if (!puedeCrear || guardando) return;
+
+      const nombre = document.getElementById("nombre").value.trim();
+      const descripcion =
+        document.getElementById("descripcion").value.trim();
+
+      if (!nombre) {
+        mensaje.textContent = "Escribe el nombre del proyecto.";
+        return;
+      }
+
+      guardando = true;
+      guardar.disabled = true;
+      mensaje.textContent = "Guardando proyecto...";
+
+      try {
+        const datos = await solicitar("/proyectos", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            nombre_proyecto: nombre,
+            descripcion
+          })
+        });
+
+        formulario.reset();
+        mensaje.textContent = datos.mensaje;
+
+        try {
+          await cargarProyectos();
+        } catch {
+          mensaje.textContent +=
+            "\nEl proyecto se guardó, pero no se pudo actualizar la lista. Recarga la página.";
+        }
+      } catch (error) {
+        mensaje.textContent =
+          error.message +
+          " Si hubo un corte de conexión, recarga y revisa la lista antes de repetir.";
+      } finally {
+        guardando = false;
+        guardar.disabled = false;
+      }
+    });
+
+    async function iniciar() {
+      const usuario = await verificarSesion();
+
+      if (!usuario) {
+        mensaje.textContent = "No se pudo comprobar la sesión.";
+        return;
+      }
+
+      const paneles = {
+        Administrador: "/admin.html",
+        Supervisor: "/supervisor.html",
+        Usuario: "/usuario.html"
+      };
+
+      document.getElementById("volver").href =
+        paneles[usuario.nombre_rol] || "/login.html";
+
+      puedeCrear = ["Administrador", "Supervisor"]
+        .includes(usuario.nombre_rol);
+
+      document.getElementById("seccionCrear").hidden =
+        !puedeCrear;
+
+      try {
+        await cargarProyectos();
+        mensaje.textContent = "";
+      } catch (error) {
+        mensaje.textContent = error.message;
+      }
+    }
+
+    iniciar();
+  </script>
+</body>
+</html>

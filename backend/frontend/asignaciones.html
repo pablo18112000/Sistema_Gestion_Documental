@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Asignar proyectos — COEMSA</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: #f2f6fa;
+      color: #19354d;
+      font-family: Arial, sans-serif;
+    }
+
+    header {
+      padding: 24px;
+      background: #245b86;
+      color: white;
+    }
+
+    h1 { margin: 0 0 18px; }
+
+    nav {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    nav a { color: white; }
+
+    main {
+      max-width: 1000px;
+      margin: 30px auto;
+      padding: 0 18px;
+    }
+
+    section {
+      background: white;
+      padding: 24px;
+      margin-bottom: 24px;
+      border-radius: 14px;
+    }
+
+    fieldset {
+      margin: 0;
+      padding: 0;
+      border: none;
+      min-width: 0;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin: 16px 0 8px;
+    }
+
+    select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #bbc9d5;
+      border-radius: 7px;
+      font: inherit;
+    }
+
+    button {
+      padding: 11px 18px;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    .asignar {
+      background: #167447;
+      color: white;
+      margin-top: 16px;
+    }
+
+    .retirar {
+      background: #b42332;
+      color: white;
+    }
+
+    .tabla { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 14px;
+      border-bottom: 1px solid #dce5ed;
+    }
+
+    th { background: #eaf1f7; }
+
+    #mensaje {
+      min-height: 24px;
+      white-space: pre-wrap;
+    }
+
+    #detalleUsuario {
+      color: #526577;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>👥 Asignar proyectos</h1>
+
+    <nav>
+      <a href="/admin.html">Volver al administrador</a>
+      <a href="/proyectos.html">Ver proyectos</a>
+
+      <button type="button" onclick="cerrarSesion()">
+        Cerrar sesión
+      </button>
+    </nav>
+  </header>
+
+  <main>
+    <p id="mensaje" role="status" aria-live="polite">
+      Comprobando sesión...
+    </p>
+
+    <fieldset id="controles" disabled>
+      <section>
+        <h2>Seleccionar persona</h2>
+
+        <label for="usuario">Usuario</label>
+        <select id="usuario">
+          <option value="">Selecciona una persona</option>
+        </select>
+
+        <p id="detalleUsuario"></p>
+
+        <label for="proyecto">Proyecto que deseas asignar</label>
+        <select id="proyecto">
+          <option value="">Selecciona un proyecto</option>
+        </select>
+
+        <button id="asignar" class="asignar" type="button" disabled>
+          Asignar proyecto
+        </button>
+
+        <button id="actualizar" type="button">
+          Actualizar asignaciones
+        </button>
+      </section>
+
+      <section>
+        <h2>Proyectos asignados</h2>
+
+        <p>
+          Una persona puede tener varios proyectos.
+          Retirar una asignación no elimina el proyecto ni sus documentos.
+        </p>
+
+        <div class="tabla">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Proyecto</th>
+                <th scope="col">Acción</th>
+              </tr>
+            </thead>
+
+            <tbody id="lista"></tbody>
+          </table>
+        </div>
+      </section>
+    </fieldset>
+  </main>
+
+  <script src="/js/auth.js"></script>
+
+  <script>
+    const controles = document.getElementById("controles");
+    const usuarioSelect = document.getElementById("usuario");
+    const proyectoSelect = document.getElementById("proyecto");
+    const botonAsignar = document.getElementById("asignar");
+    const mensaje = document.getElementById("mensaje");
+    const lista = document.getElementById("lista");
+    const detalle = document.getElementById("detalleUsuario");
+
+    let usuarios = [];
+    let proyectos = [];
+    let asignados = new Set();
+    let listaLista = false;
+    let ocupado = false;
+
+    async function solicitar(url, opciones = {}) {
+      const respuesta = await fetch(url, {
+        ...opciones,
+        credentials: "same-origin",
+        cache: "no-store"
+      });
+
+      if (respuesta.status === 401) {
+        localStorage.removeItem("usuario");
+        window.location.replace("/login.html");
+        throw new Error("Debes iniciar sesión.");
+      }
+
+      const datos = await respuesta.json();
+
+      if (!respuesta.ok || !datos.success) {
+        throw new Error(
+          datos.mensaje || "No se pudo completar la operación."
+        );
+      }
+
+      return datos;
+    }
+
+    function actualizarControles() {
+      controles.disabled = ocupado;
+
+      botonAsignar.disabled =
+        ocupado ||
+        !listaLista ||
+        !usuarioSelect.value ||
+        !proyectoSelect.value;
+    }
+
+    function mostrarFilaVacia(texto) {
+      lista.replaceChildren();
+
+      const fila = document.createElement("tr");
+      const celda = document.createElement("td");
+
+      celda.colSpan = 2;
+      celda.textContent = texto;
+
+      fila.appendChild(celda);
+      lista.appendChild(fila);
+    }
+
+    function actualizarSelectorProyectos() {
+      proyectoSelect.replaceChildren(
+        new Option("Selecciona un proyecto", "")
+      );
+
+      for (const proyecto of proyectos) {
+        if (!asignados.has(Number(proyecto.id_proyecto))) {
+          proyectoSelect.add(
+            new Option(
+              proyecto.nombre_proyecto,
+              proyecto.id_proyecto
+            )
+          );
+        }
+      }
+    }
+
+    async function cargarAsignaciones() {
+      listaLista = false;
+      asignados = new Set();
+      actualizarSelectorProyectos();
+
+      const idUsuario = usuarioSelect.value;
+      const usuario = usuarios.find(
+        (item) => String(item.id_usuario) === idUsuario
+      );
+
+      detalle.textContent = usuario
+        ? `Rol: ${usuario.nombre_rol}. Área: ${usuario.nombre_area || "Sin área"}.`
+        : "";
+
+      if (!idUsuario) {
+        mostrarFilaVacia("Selecciona una persona.");
+        return;
+      }
+
+      mostrarFilaVacia("Cargando asignaciones...");
+
+      try {
+        const datos = await solicitar(
+          "/asignaciones/usuarios/" + encodeURIComponent(idUsuario)
+        );
+
+        lista.replaceChildren();
+
+        for (const proyecto of datos.proyectos) {
+          asignados.add(Number(proyecto.id_proyecto));
+
+          const fila = document.createElement("tr");
+          const nombre = document.createElement("td");
+          const acciones = document.createElement("td");
+          const boton = document.createElement("button");
+
+          nombre.textContent = proyecto.nombre_proyecto;
+          boton.type = "button";
+          boton.className = "retirar";
+          boton.textContent = "Retirar asignación";
+
+          boton.addEventListener("click", () => {
+            modificar(
+              "/asignaciones/" +
+                encodeURIComponent(idUsuario) + "/" +
+                encodeURIComponent(proyecto.id_proyecto),
+              { method: "DELETE" }
+            );
+          });
+
+          acciones.appendChild(boton);
+          fila.append(nombre, acciones);
+          lista.appendChild(fila);
+        }
+
+        if (datos.proyectos.length === 0) {
+          mostrarFilaVacia("Esta persona no tiene proyectos asignados.");
+        }
+
+        actualizarSelectorProyectos();
+        listaLista = true;
+      } catch (error) {
+        mostrarFilaVacia("No se pudieron cargar las asignaciones.");
+        throw error;
+      }
+    }
+
+    async function actualizarLista() {
+      if (ocupado) return;
+
+      ocupado = true;
+      actualizarControles();
+      mensaje.textContent = "";
+
+      try {
+        await cargarAsignaciones();
+      } catch (error) {
+        mensaje.textContent = error.message;
+      } finally {
+        ocupado = false;
+        actualizarControles();
+      }
+    }
+
+    async function modificar(url, opciones) {
+      if (ocupado || !listaLista) return;
+
+      ocupado = true;
+      actualizarControles();
+      mensaje.textContent = "Guardando...";
+
+      try {
+        const datos = await solicitar(url, opciones);
+        mensaje.textContent = datos.mensaje;
+
+        try {
+          await cargarAsignaciones();
+        } catch {
+          mensaje.textContent +=
+            "\nEl cambio se guardó, pero no se pudo actualizar la lista. Pulsa Actualizar asignaciones.";
+        }
+      } catch (error) {
+        listaLista = false;
+        mostrarFilaVacia("Actualiza las asignaciones antes de continuar.");
+
+        mensaje.textContent =
+          error.message +
+          " Pulsa Actualizar asignaciones para comprobar el estado.";
+      } finally {
+        ocupado = false;
+        actualizarControles();
+      }
+    }
+
+    usuarioSelect.addEventListener("change", actualizarLista);
+
+    proyectoSelect.addEventListener(
+      "change",
+      actualizarControles
+    );
+
+    document.getElementById("actualizar").addEventListener(
+      "click",
+      actualizarLista
+    );
+
+    botonAsignar.addEventListener("click", () => {
+      if (!usuarioSelect.value || !proyectoSelect.value) return;
+
+      modificar("/asignaciones", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          id_usuario: Number(usuarioSelect.value),
+          id_proyecto: Number(proyectoSelect.value)
+        })
+      });
+    });
+
+    async function iniciar() {
+      const administrador = await verificarSesion("Administrador");
+
+      if (!administrador) {
+        mensaje.textContent = "No se pudo autorizar el acceso.";
+        return;
+      }
+
+      ocupado = true;
+      actualizarControles();
+
+      try {
+        const [datosUsuarios, datosProyectos] = await Promise.all([
+          solicitar("/usuarios"),
+          solicitar("/asignaciones/proyectos")
+        ]);
+
+        usuarios = datosUsuarios.usuarios;
+        proyectos = datosProyectos.proyectos;
+
+        for (const usuario of usuarios) {
+          const nombre =
+            `${usuario.nombre} ${usuario.apellido || ""}`.trim();
+
+          const estado =
+            Number(usuario.estado) === 1 ? "" : " — Inactivo";
+
+          usuarioSelect.add(
+            new Option(
+              `${nombre} — ${usuario.correo} — ${usuario.nombre_rol}${estado}`,
+              usuario.id_usuario
+            )
+          );
+        }
+
+        actualizarSelectorProyectos();
+        mostrarFilaVacia("Selecciona una persona.");
+        mensaje.textContent = "";
+        ocupado = false;
+        actualizarControles();
+      } catch (error) {
+        mensaje.textContent =
+          error.message + " Recarga la página para volver a intentar.";
+        controles.disabled = true;
+      }
+    }
+
+    iniciar();
+  </script>
+</body>
+</html>

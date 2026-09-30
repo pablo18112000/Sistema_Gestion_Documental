@@ -1,140 +1,773 @@
 <!DOCTYPE html>
-
-<html>
-
+<html lang="es">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Supervisor | COEMSA</title>
 
-<title>
-Panel Supervisor
-</title>
+  <style>
+    * { box-sizing: border-box; }
 
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f2f6fa;
+      color: #17324d;
+    }
 
-<link rel="stylesheet" href="css/supervisor.css">
+    [hidden] { display: none !important; }
 
+    header {
+      background: #245b83;
+      color: white;
+      padding: 24px;
+    }
 
+    .cabecera {
+      max-width: 1300px;
+      margin: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 26px;
+    }
+
+    header p { margin: 0; }
+
+    main {
+      max-width: 1340px;
+      margin: 28px auto;
+      padding: 0 20px;
+    }
+
+    .bloque {
+      background: white;
+      border: 1px solid #dce5ee;
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 22px;
+    }
+
+    h2 { margin: 0 0 16px; }
+
+    .datos,
+    .acciones,
+    nav {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .datos { gap: 12px 30px; }
+    .datos p { margin: 0; }
+
+    nav { margin-bottom: 22px; }
+
+    button,
+    .boton {
+      display: inline-block;
+      padding: 11px 16px;
+      border: 0;
+      border-radius: 8px;
+      background: #245b83;
+      color: white;
+      font: inherit;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    button:hover,
+    .boton:hover {
+      background: #194565;
+    }
+
+    button:disabled {
+      background: #e4e9ee;
+      color: #596a78;
+      cursor: not-allowed;
+    }
+
+    button:focus-visible,
+    a:focus-visible {
+      outline: 3px solid #e6a700;
+      outline-offset: 3px;
+    }
+
+    .salir {
+      background: white;
+      color: #245b83;
+    }
+
+    .salir:hover { background: #e6eff6; }
+
+    .aprobar { background: #187247; }
+    .aprobar:hover { background: #115534; }
+
+    .rechazar { background: #b3313b; }
+    .rechazar:hover { background: #89242c; }
+
+    .tabla-contenedor { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 18px;
+    }
+
+    th,
+    td {
+      padding: 13px;
+      text-align: left;
+      border-bottom: 1px solid #dce5ee;
+      vertical-align: top;
+    }
+
+    th { background: #eaf1f7; }
+
+    td { overflow-wrap: anywhere; }
+
+    .archivo { min-width: 210px; }
+    .controles { min-width: 230px; }
+
+    .detalle {
+      display: block;
+      margin-top: 7px;
+      color: #526779;
+      font-size: 13px;
+      white-space: pre-wrap;
+    }
+
+    .estado {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 20px;
+      background: #fff1c5;
+      color: #795800;
+    }
+
+    .estado.aprobado {
+      background: #def4e7;
+      color: #175f3b;
+    }
+
+    .estado.rechazado {
+      background: #ffe1e4;
+      color: #92232d;
+    }
+
+    .aviso {
+      line-height: 1.6;
+      color: #526779;
+    }
+
+    #mensaje { line-height: 1.6; }
+
+    .error { color: #a12424; }
+    .correcto { color: #17623b; }
+
+    .seleccionado {
+      box-shadow: inset 0 -4px 0 #e6a700;
+    }
+
+    #titulo { margin-top: 24px; }
+  </style>
 </head>
-
 
 <body>
 
-
-<header>
-
-<h1>
-📁 Sistema de Gestión Documental
-</h1>
-
-<h2>
-Panel Supervisor
-</h2>
-
-
-</header>
-
-
-
-<!-- BOTÓN HISTORIAL -->
-
-<div class="menu-supervisor">
-
-<a href="historial.html">
-
-<button>
-
-📋 Ver Historial de Revisiones
-
-</button>
-
-</a>
-
-</div>
-
-
-
-
-
-<section class="contenedor">
-
-
-<h2>
-📄 Documentos Pendientes de Revisión
-</h2>
-
-
-
-
-<table>
-
-
-<thead>
-
-
-<tr>
-
-<th>
-Archivo
-</th>
-
-
-<th>
-Usuario
-</th>
-
-
-<th>
-Correo
-</th>
-
-
-<th>
-Carpeta
-</th>
-
-
-<th>
-Fecha
-</th>
-
-
-<th>
-Estado
-</th>
-
-
-<th>
-Acciones
-</th>
-
-
-</tr>
-
-
-</thead>
-
-
-
-
-<tbody id="listaDocumentos">
-
-
-</tbody>
-
-
-</table>
-
-
-
-</section>
-
-
-
-
-
-<script src="js/supervisor.js"></script>
-
-
-
+<nav
+  id="accesos-documentales-coemsa"
+  aria-label="Accesos de documentos"
+  style="display:flex;flex-wrap:wrap;gap:18px;padding:16px 24px;background:#eaf1f7;"
+>
+  <a href="/subir_documento.html">Subir PDF</a>
+  <a href="/documentos.html">Ver documentos</a>
+  <a href="/proyectos.html">Proyectos</a>
+  
+</nav>
+<style>
+  #accesos-documentales-coemsa a {
+    color: #17324d;
+    font-weight: bold;
+  }
+
+  #accesos-documentales-coemsa a:focus-visible {
+    outline: 3px solid #e6a700;
+    outline-offset: 3px;
+  }
+</style>
+
+  <header>
+    <div class="cabecera">
+      <div>
+        <h1>Documentos COEMSA</h1>
+        <p>Panel del Supervisor</p>
+      </div>
+
+      <button id="salir" class="salir" type="button">
+        Cerrar sesión
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <p id="mensaje" role="status" aria-live="polite">
+      Verificando sesión…
+    </p>
+
+    <div id="contenido" hidden>
+      <section class="bloque">
+        <h2 id="bienvenida"></h2>
+
+        <div class="datos">
+          <p>
+            <strong>Área:</strong>
+            <span id="area"></span>
+          </p>
+
+          <p>
+            <strong>Rol:</strong>
+            <span id="rol"></span>
+          </p>
+        </div>
+      </section>
+
+      <nav aria-label="Herramientas del supervisor">
+        <a class="boton" href="/documentos.html">
+          Todos los documentos
+        </a>
+
+        <a class="boton" href="/proyectos.html">
+          Ver o crear proyectos
+        </a>
+      </nav>
+
+      <section class="bloque">
+        <div class="acciones">
+          <button id="pendientes" type="button">
+            Pendientes
+          </button>
+
+          <button id="historial" type="button">
+            Historial de revisiones
+          </button>
+
+          <button id="actualizar" type="button">
+            Actualizar
+          </button>
+        </div>
+
+        <h2 id="titulo">Documentos pendientes de revisión</h2>
+
+        <p id="contador"></p>
+
+        <div class="tabla-contenedor">
+          <table aria-labelledby="titulo">
+            <thead>
+              <tr>
+                <th scope="col">Archivo</th>
+                <th scope="col">Subido por</th>
+                <th scope="col" id="colDestino">Proyecto o área</th>
+                <th scope="col" id="colFecha">Fecha de subida</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Acciones</th>
+              </tr>
+            </thead>
+
+            <tbody id="filas"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <p class="aviso">
+        Usa “Ver documento” para abrir el PDF en otra pestaña
+        antes de aprobar o rechazar.
+        Si el archivo no está disponible, debe recuperarse antes
+        de revisarlo. La subida de PDF a Drive está disponible desde el acceso Subir PDF.
+      </p>
+    </div>
+  </main>
+
+  <script src="/js/auth.js"></script>
+
+  <script>
+    "use strict";
+
+    const mensaje = document.getElementById("mensaje");
+    const contenido = document.getElementById("contenido");
+    const filas = document.getElementById("filas");
+    const contador = document.getElementById("contador");
+
+    const btnPendientes = document.getElementById("pendientes");
+    const btnHistorial = document.getElementById("historial");
+    const btnActualizar = document.getElementById("actualizar");
+    const btnSalir = document.getElementById("salir");
+
+    let vista = "pendientes";
+    let ocupado = false;
+    let listaValida = false;
+
+    function mostrarMensaje(texto, tipo = "") {
+      mensaje.textContent = texto;
+      mensaje.className = tipo;
+      mensaje.hidden = !texto;
+    }
+
+    function actualizarControles() {
+      btnPendientes.disabled = ocupado;
+      btnHistorial.disabled = ocupado;
+      btnActualizar.disabled = ocupado;
+      btnSalir.disabled = ocupado;
+
+      btnPendientes.classList.toggle(
+        "seleccionado",
+        vista === "pendientes"
+      );
+
+      btnHistorial.classList.toggle(
+        "seleccionado",
+        vista === "historial"
+      );
+
+      btnPendientes.setAttribute(
+        "aria-pressed",
+        String(vista === "pendientes")
+      );
+
+      btnHistorial.setAttribute(
+        "aria-pressed",
+        String(vista === "historial")
+      );
+
+      filas.querySelectorAll("button").forEach((boton) => {
+        boton.disabled = ocupado || !listaValida;
+      });
+    }
+
+    async function consultar(url, opciones = {}) {
+      const respuesta = await fetch(url, {
+        ...opciones,
+        credentials: "same-origin",
+        cache: "no-store"
+      });
+
+      if (respuesta.status === 401) {
+        localStorage.removeItem("usuario");
+        window.location.replace("/login.html");
+
+        throw new Error(
+          "La sesión terminó. Inicia sesión nuevamente."
+        );
+      }
+
+      let datos;
+
+      try {
+        datos = await respuesta.json();
+      } catch {
+        throw new Error(
+          "El servidor devolvió una respuesta inesperada."
+        );
+      }
+
+      if (!respuesta.ok || datos.success !== true) {
+        throw new Error(
+          datos.mensaje || "No se pudo completar la consulta."
+        );
+      }
+
+      return datos;
+    }
+
+    function fechaLocal(valor) {
+      if (!valor) return "—";
+
+      const fecha = new Date(valor);
+
+      if (Number.isNaN(fecha.getTime())) return "—";
+
+      return fecha.toLocaleString("es-PE", {
+        timeZone: "America/Lima",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function celda(fila, texto, clase = "") {
+      const td = document.createElement("td");
+      td.textContent = texto ?? "—";
+      td.className = clase;
+      fila.appendChild(td);
+      return td;
+    }
+
+    function filaInformativa(texto) {
+      filas.replaceChildren();
+
+      const fila = document.createElement("tr");
+      const td = celda(fila, texto);
+      td.colSpan = 6;
+
+      filas.appendChild(fila);
+    }
+
+    function mostrarDocumentos(documentos) {
+      filas.replaceChildren();
+
+      if (documentos.length === 0) {
+        filaInformativa(
+          vista === "pendientes"
+            ? "No hay documentos pendientes de revisión."
+            : "No hay revisiones registradas."
+        );
+        return;
+      }
+
+      for (const documento of documentos) {
+        const fila = document.createElement("tr");
+
+        const archivo = celda(
+          fila,
+          documento.nombre_archivo || "Documento sin nombre",
+          "archivo"
+        );
+
+        const detalle = document.createElement("span");
+        detalle.className = "detalle";
+
+        detalle.textContent = vista === "pendientes"
+          ? [
+              "ID: " + documento.id_documento,
+              "Versión: " + (documento.version || "—"),
+              documento.descripcion || ""
+            ].filter(Boolean).join("\n")
+          : "ID: " + documento.id_documento;
+
+        archivo.appendChild(detalle);
+
+        const nombre = [
+          documento.nombre,
+          documento.apellido
+        ].filter(Boolean).join(" ");
+
+        celda(fila, nombre || "Usuario no disponible");
+
+        celda(
+          fila,
+          vista === "pendientes"
+            ? documento.nombre_proyecto ||
+              documento.nombre_area ||
+              "Sin clasificar"
+            : documento.comentario || "Sin comentario"
+        );
+
+        celda(
+          fila,
+          fechaLocal(
+            vista === "pendientes"
+              ? documento.fecha_subida
+              : documento.fecha_revision
+          )
+        );
+
+        const tdEstado = celda(fila, "");
+        const estado = document.createElement("span");
+
+        estado.className = "estado";
+        estado.textContent = documento.estado || "Sin estado";
+
+        const estadoNormalizado = String(
+          documento.estado || ""
+        ).trim().toLowerCase();
+
+        if (
+          estadoNormalizado === "aprobado" ||
+          estadoNormalizado === "rechazado"
+        ) {
+          estado.classList.add(estadoNormalizado);
+        }
+
+        tdEstado.appendChild(estado);
+
+        const tdAcciones = celda(fila, "", "controles");
+        const grupo = document.createElement("div");
+        grupo.className = "acciones";
+
+        const id = Number(documento.id_documento);
+
+        if (
+          Number.isSafeInteger(id) &&
+          id > 0 &&
+          id <= 2147483647
+        ) {
+          const enlaceVer = document.createElement("a");
+
+          enlaceVer.className = "boton";
+          enlaceVer.textContent = "Ver documento";
+          enlaceVer.href = "/archivos/" + id + "/ver";
+          enlaceVer.target = "_blank";
+          enlaceVer.rel = "noopener noreferrer";
+
+          grupo.appendChild(enlaceVer);
+
+          if (vista === "pendientes") {
+            for (const accion of ["aprobar", "rechazar"]) {
+              const boton = document.createElement("button");
+
+              boton.type = "button";
+              boton.className = accion;
+              boton.textContent =
+                accion === "aprobar" ? "Aprobar" : "Rechazar";
+
+              boton.addEventListener("click", () => {
+                revisar(documento, accion);
+              });
+
+              grupo.appendChild(boton);
+            }
+          }
+        } else {
+          grupo.textContent = "Documento no disponible.";
+        }
+
+        tdAcciones.appendChild(grupo);
+        filas.appendChild(fila);
+      }
+    }
+
+    async function cargar(nuevaVista = vista) {
+      if (ocupado) return;
+
+      vista = nuevaVista;
+      ocupado = true;
+      listaValida = false;
+
+      actualizarControles();
+      mostrarMensaje("Cargando…");
+      contador.textContent = "";
+      filaInformativa("Cargando documentos…");
+
+      document.getElementById("titulo").textContent =
+        vista === "pendientes"
+          ? "Documentos pendientes de revisión"
+          : "Historial de revisiones";
+
+      document.getElementById("colDestino").textContent =
+        vista === "pendientes"
+          ? "Proyecto o área"
+          : "Comentario";
+
+      document.getElementById("colFecha").textContent =
+        vista === "pendientes"
+          ? "Fecha de subida"
+          : "Fecha de revisión";
+
+      try {
+        const datos = await consultar("/aprobaciones/" + vista);
+
+        if (!Array.isArray(datos.documentos)) {
+          throw new Error(
+            "La lista recibida no tiene el formato esperado."
+          );
+        }
+
+        mostrarDocumentos(datos.documentos);
+        listaValida = true;
+
+        contador.textContent = datos.hay_mas
+          ? "Se muestran los primeros 200 registros. Hay más registros disponibles."
+          : "Registros: " + datos.documentos.length;
+
+        mostrarMensaje("");
+      } catch (error) {
+        filaInformativa(
+          "No se pudo consultar la lista. Pulsa Actualizar."
+        );
+
+        mostrarMensaje(error.message, "error");
+      } finally {
+        ocupado = false;
+        actualizarControles();
+      }
+    }
+
+    async function revisar(documento, accion) {
+      if (ocupado || !listaValida) return;
+
+      const id = Number(documento.id_documento);
+
+      if (
+        !Number.isSafeInteger(id) ||
+        id < 1 ||
+        id > 2147483647
+      ) {
+        mostrarMensaje(
+          "El documento no tiene un ID válido.",
+          "error"
+        );
+        return;
+      }
+
+      let comentario = "";
+
+      if (accion === "rechazar") {
+        const respuesta = window.prompt(
+          "Escribe el motivo del rechazo (máximo 255 caracteres):"
+        );
+
+        if (respuesta === null) return;
+
+        comentario = respuesta.trim();
+
+        if (
+          !comentario ||
+          Array.from(comentario).length > 255
+        ) {
+          mostrarMensaje(
+            "El motivo debe tener entre 1 y 255 caracteres.",
+            "error"
+          );
+          return;
+        }
+      }
+
+      const pregunta = accion === "aprobar"
+        ? "¿Confirmas que revisaste el contenido y deseas APROBAR este documento?"
+        : "¿Confirmas que revisaste el contenido y deseas RECHAZAR este documento?";
+
+      const confirmado = window.confirm(
+        pregunta +
+        "\n\n" + documento.nombre_archivo +
+        "\nID: " + id +
+        (comentario ? "\n\nMotivo: " + comentario : "")
+      );
+
+      if (!confirmado) return;
+
+      ocupado = true;
+      listaValida = false;
+      actualizarControles();
+      mostrarMensaje("Guardando revisión…");
+
+      let resultado = "";
+      let tipo = "";
+
+      try {
+        const datos = await consultar(
+          "/aprobaciones/documentos/" + id + "/" + accion,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ comentario })
+          }
+        );
+
+        resultado = datos.mensaje;
+        tipo = "correcto";
+      } catch (error) {
+        resultado =
+          error.message +
+          " Comprueba la lista y el historial antes de repetir la acción.";
+
+        tipo = "error";
+      } finally {
+        ocupado = false;
+      }
+
+      await cargar("pendientes");
+
+      mostrarMensaje(
+        resultado +
+        (listaValida
+          ? ""
+          : " No se pudo actualizar la lista; pulsa Actualizar."),
+        listaValida ? tipo : "error"
+      );
+    }
+
+    btnPendientes.addEventListener("click", () => {
+      cargar("pendientes");
+    });
+
+    btnHistorial.addEventListener("click", () => {
+      cargar("historial");
+    });
+
+    btnActualizar.addEventListener("click", () => {
+      cargar(vista);
+    });
+
+    btnSalir.addEventListener("click", async () => {
+      if (ocupado) return;
+
+      ocupado = true;
+      actualizarControles();
+
+      try {
+        await cerrarSesion();
+      } catch {
+        mostrarMensaje(
+          "No se pudo cerrar la sesión.",
+          "error"
+        );
+      } finally {
+        ocupado = false;
+        actualizarControles();
+      }
+    });
+
+    async function iniciar() {
+      try {
+        const usuario = await verificarSesion("Supervisor");
+
+        if (
+          !usuario ||
+          usuario.nombre_rol !== "Supervisor"
+        ) {
+          mostrarMensaje(
+            "Necesitas una sesión de Supervisor para abrir este panel.",
+            "error"
+          );
+          return;
+        }
+
+        const nombre = [
+          usuario.nombre,
+          usuario.apellido
+        ].filter(Boolean).join(" ");
+
+        document.getElementById("bienvenida").textContent =
+          "Bienvenido, " + nombre;
+
+        document.getElementById("area").textContent =
+          usuario.nombre_area || "Sin área asignada";
+
+        document.getElementById("rol").textContent =
+          usuario.nombre_rol;
+
+        contenido.hidden = false;
+        await cargar("pendientes");
+      } catch {
+        mostrarMensaje(
+          "No se pudo cargar el panel. Recarga la página.",
+          "error"
+        );
+      }
+    }
+
+    iniciar();
+  </script>
 </body>
-
-
 </html>

@@ -1,544 +1,258 @@
 <!DOCTYPE html>
-
 <html lang="es">
 
-
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
+  <title>Panel Administrador — COEMSA</title>
 
-<meta charset="UTF-8">
+  <link rel="stylesheet" href="css/admin.css">
 
+  <style>
+    .btn-cerrar-sesion {
+      margin-top: 12px;
+      padding: 10px 20px;
+      border: 1px solid white;
+      border-radius: 8px;
+      background: transparent;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+    }
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    .btn-cerrar-sesion:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
 
+    .btn-cancelar {
+      margin-left: 8px;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 6px;
+      background: #e5e7eb;
+      color: #1f2937;
+      cursor: pointer;
+    }
 
-<title>
-Panel Administrador
-</title>
-
-
-
-<link rel="stylesheet" href="css/admin.css">
-
-
-
+    .tabla-contenedor {
+      overflow-x: auto;
+    }
+  </style>
 </head>
-
-
-
 
 <body>
 
-
-
-
-
-<header>
-
-
-<h1>
-📁 Sistema de Gestión Documental
-</h1>
-
-
-
-<h2>
-Panel Administrador
-</h2>
-
-
-
-</header>
-
-
-
-
-
-
-
-<section class="container">
-
-
-
-
-
-<div class="titulo">
-
-
-<h2>
-👥 Gestión de Usuarios
-</h2>
-
-
-
-
-<button 
-class="btn-nuevo"
-onclick="abrirFormulario()">
-
-
-➕ Nuevo Usuario
-
-
-</button>
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-<!-- =========================
-     FORMULARIO CREAR
-========================= -->
-
-
-<div 
-id="formularioUsuario"
-style="display:none;">
-
-
-
-<h3>
-Registrar Nuevo Usuario
-</h3>
-
-
-
-<input 
-id="nombre"
-placeholder="Nombre">
-
-
-
-<input 
-id="apellido"
-placeholder="Apellido">
-
-
-
-<input 
-id="correo"
-placeholder="Correo">
-
-
-
-<input 
-id="password"
-type="password"
-placeholder="Contraseña">
-
-
-
-
-
-
-<select id="rol">
-
-
-<option value="1">
-
-Administrador
-
-</option>
-
-
-<option value="2">
-
-Supervisor
-
-</option>
-
-
-
-<option value="3">
-
-Usuario
-
-</option>
-
-
-</select>
-
-
-
-
-
-
-<select id="area">
-
-
-<option value="1">
-
-Recursos Humanos
-
-</option>
-
-
-
-<option value="2">
-
-Servicios y/o Proyectos
-
-</option>
-
-
-
-
-<option value="3">
-
-Administración
-
-</option>
-
-
-
-
-<option value="4">
-
-Logística
-
-</option>
-
-
-
-
-<option value="5">
-
-Seguridad
-
-</option>
-
-
-
-</select>
-
-
-
-
-
-
-<button
-
-class="btn-guardar"
-
-onclick="crearUsuario()">
-
-
-
-Guardar Usuario
-
-
-
-</button>
-
-
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-<!-- =========================
-     FORMULARIO EDITAR
-========================= -->
-
-
-<div 
-id="editarUsuario"
-style="display:none;">
-
-
-
-
-
-<h3>
-Editar Usuario
-</h3>
-
-
-
-
-
-<input
-
-id="editNombre"
-
-placeholder="Nombre">
-
-
-
-
-
-
-<input
-
-id="editApellido"
-
-placeholder="Apellido">
-
-
-
-
-
-
-<input
-
-id="editCorreo"
-
-placeholder="Correo">
-
-
-
-
-
-
-
-<select id="editRol">
-
-
-<option value="1">
-
-Administrador
-
-</option>
-
-
-<option value="2">
-
-Supervisor
-
-</option>
-
-
-<option value="3">
-
-Usuario
-
-</option>
-
-
-
-</select>
-
-
-
-
-
-
-
-<select id="editArea">
-
-
-<option value="1">
-
-Recursos Humanos
-
-</option>
-
-
-
-<option value="2">
-
-Servicios y/o Proyectos
-
-</option>
-
-
-
-<option value="3">
-
-Administración
-
-</option>
-
-
-
-<option value="4">
-
-Logística
-
-</option>
-
-
-
-<option value="5">
-
-Seguridad
-
-</option>
-
-
-</select>
-
-
-
-
-
-
-
-
-<button
-
-class="btn-guardar"
-
-onclick="guardarEdicion()">
-
-
-
-Guardar Cambios
-
-
-
-</button>
-
-
-
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-<!-- =========================
-        TABLA USUARIOS
-========================= -->
-
-
-
-<table>
-
-
-
-
-<thead>
-
-
-<tr>
-
-
-<th>
-Nombre
-</th>
-
-
-
-<th>
-Apellido
-</th>
-
-
-
-<th>
-Correo
-</th>
-
-
-
-<th>
-Rol
-</th>
-
-
-
-<th>
-Área
-</th>
-
-
-
-<th>
-Estado
-</th>
-
-
-
-<th>
-Acciones
-</th>
-
-
-
-</tr>
-
-
-</thead>
-
-
-
-
-
-
-
-<tbody id="listaUsuarios">
-
-
-</tbody>
-
-
-
-
-
-</table>
-
-
-
-
-
-
-</section>
-
-
-
-
-
-
-
-
-
-<script src="js/auth.js"></script>
-
-
-
-<script>
-
-
-verificarSesion("Administrador");
-
-
-</script>
-
-
-
-
-
-<script src="js/admin.js"></script>
-
-
-
-
+<nav
+  id="accesos-documentales-coemsa"
+  aria-label="Accesos de documentos"
+  style="display:flex;flex-wrap:wrap;gap:18px;padding:16px 24px;background:#eaf1f7;"
+>
+  <a href="/subir_documento.html">Subir PDF</a>
+  <a href="/documentos.html">Ver documentos</a>
+  <a href="/proyectos.html">Proyectos</a>
+  <a href="/asignaciones.html">Asignar proyectos</a>
+</nav>
+<style>
+  #accesos-documentales-coemsa a {
+    color: #17324d;
+    font-weight: bold;
+  }
+
+  #accesos-documentales-coemsa a:focus-visible {
+    outline: 3px solid #e6a700;
+    outline-offset: 3px;
+  }
+</style>
+
+
+  <header>
+    <h1>📁 Sistema de Gestión Documental</h1>
+    <h2>Panel Administrador</h2>
+
+    <button
+      type="button"
+      class="btn-cerrar-sesion"
+      onclick="cerrarSesion()"
+    >
+      Cerrar sesión
+    </button>
+  </header>
+
+  <section class="container">
+
+    <div class="titulo">
+      <h2>👥 Gestión de Usuarios</h2>
+
+      <button
+        type="button"
+        class="btn-nuevo"
+        onclick="abrirFormulario()"
+      >
+        ➕ Nuevo Usuario
+      </button>
+    </div>
+
+    <!-- REGISTRAR USUARIO -->
+
+    <div id="formularioUsuario" style="display: none;">
+      <h3>Registrar Nuevo Usuario</h3>
+
+      <div class="grid-form">
+        <input
+          id="nombre"
+          type="text"
+          placeholder="Nombre"
+          aria-label="Nombre"
+          autocomplete="given-name"
+        >
+
+        <input
+          id="apellido"
+          type="text"
+          placeholder="Apellido"
+          aria-label="Apellido"
+          autocomplete="family-name"
+        >
+
+        <input
+          id="correo"
+          type="email"
+          placeholder="Correo"
+          aria-label="Correo"
+          autocomplete="email"
+        >
+
+        <input
+          id="password"
+          type="password"
+          placeholder="Contraseña"
+          aria-label="Contraseña"
+          autocomplete="new-password"
+        >
+
+        <select id="rol" aria-label="Rol">
+          <option value="1">Administrador</option>
+          <option value="2">Supervisor</option>
+          <option value="3" selected>Usuario</option>
+        </select>
+
+        <select id="area" aria-label="Área">
+          <option value="1">Recursos Humanos</option>
+          <option value="2">Servicios y/o Proyectos</option>
+          <option value="3">Administración</option>
+          <option value="4">Logística</option>
+          <option value="5">Seguridad</option>
+        </select>
+      </div>
+
+      <button
+        type="button"
+        class="btn-guardar"
+        onclick="crearUsuario()"
+      >
+        Guardar Usuario
+      </button>
+
+      <button
+        type="button"
+        class="btn-cancelar"
+        onclick="document.getElementById('formularioUsuario').style.display = 'none'"
+      >
+        Cancelar
+      </button>
+    </div>
+
+    <!-- EDITAR USUARIO -->
+
+    <div id="editarUsuario" style="display: none;">
+      <h3>Editar Usuario</h3>
+
+      <div class="grid-form">
+        <input
+          id="editNombre"
+          type="text"
+          placeholder="Nombre"
+          aria-label="Editar nombre"
+        >
+
+        <input
+          id="editApellido"
+          type="text"
+          placeholder="Apellido"
+          aria-label="Editar apellido"
+        >
+
+        <input
+          id="editCorreo"
+          type="email"
+          placeholder="Correo"
+          aria-label="Editar correo"
+        >
+
+        <select id="editRol" aria-label="Editar rol">
+          <option value="1">Administrador</option>
+          <option value="2">Supervisor</option>
+          <option value="3">Usuario</option>
+        </select>
+
+        <select id="editArea" aria-label="Editar área">
+          <option value="1">Recursos Humanos</option>
+          <option value="2">Servicios y/o Proyectos</option>
+          <option value="3">Administración</option>
+          <option value="4">Logística</option>
+          <option value="5">Seguridad</option>
+        </select>
+      </div>
+
+      <button
+        type="button"
+        class="btn-guardar"
+        onclick="guardarEdicion()"
+      >
+        Guardar Cambios
+      </button>
+
+      <button
+        type="button"
+        class="btn-cancelar"
+        onclick="document.getElementById('editarUsuario').style.display = 'none'"
+      >
+        Cancelar
+      </button>
+    </div>
+
+    <!-- LISTA DE USUARIOS -->
+
+    <div class="tabla-contenedor">
+      <table class="tabla-usuarios">
+        <thead>
+          <tr>
+            <th scope="col">Nombre</th>
+            <th scope="col">Apellido</th>
+            <th scope="col">Correo</th>
+            <th scope="col">Rol</th>
+            <th scope="col">Área</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Acciones</th>
+          </tr>
+        </thead>
+
+        <tbody id="listaUsuarios"></tbody>
+      </table>
+    </div>
+
+  </section>
+
+  <!-- CONTROL DE SESIÓN -->
+  <script src="js/auth.js"></script>
+
+  <script>
+    verificarSesion("Administrador");
+  </script>
+
+  <!-- FUNCIONES DE USUARIOS -->
+  <script src="js/admin.js"></script>
 
 </body>
-
-
 </html>

@@ -5,9 +5,7 @@
 
 
 *{
-
     box-sizing:border-box;
-
 }
 
 
@@ -27,16 +25,14 @@ body{
 
 
 
-
-
-/* =====================================
-              CABECERA
-===================================== */
+/* ==========================
+        CABECERA
+========================== */
 
 
 header{
 
-    background:#1f5f95;
+    background:#245784;
 
     color:white;
 
@@ -54,8 +50,6 @@ header h1{
 
     font-size:36px;
 
-    font-weight:700;
-
 }
 
 
@@ -66,8 +60,6 @@ header h2{
 
     font-size:22px;
 
-    font-weight:400;
-
 }
 
 
@@ -75,10 +67,9 @@ header h2{
 
 
 
-
-/* =====================================
-          CONTENEDOR PRINCIPAL
-===================================== */
+/* ==========================
+        CONTENEDOR
+========================== */
 
 
 .container{
@@ -86,18 +77,21 @@ header h2{
 
     width:90%;
 
-    margin:45px auto;
+    margin:40px auto;
+
 
     background:white;
 
+
     padding:35px;
+
 
     border-radius:18px;
 
 
     box-shadow:
 
-    0 10px 25px rgba(0,0,0,.12);
+    0 8px 25px rgba(0,0,0,.15);
 
 
 }
@@ -107,9 +101,9 @@ header h2{
 
 
 
-/* =====================================
-              TITULO
-===================================== */
+/* ==========================
+        TITULO
+========================== */
 
 
 .titulo{
@@ -122,12 +116,11 @@ header h2{
     align-items:center;
 
 
-    border-bottom:
-
-    3px solid #245784;
+    border-bottom:3px solid #245784;
 
 
-    padding-bottom:18px;
+    padding-bottom:15px;
+
 
     margin-bottom:25px;
 
@@ -139,11 +132,13 @@ header h2{
 .titulo h2{
 
 
-    margin:0;
-
     color:#245784;
 
+
     font-size:30px;
+
+
+    margin:0;
 
 
 }
@@ -154,9 +149,25 @@ header h2{
 
 
 
-/* =====================================
-              BOTÓN NUEVO
-===================================== */
+
+/* ==========================
+        BOTONES
+========================== */
+
+
+button{
+
+
+    cursor:pointer;
+
+    border:none;
+
+    font-weight:bold;
+
+
+}
+
+
 
 
 .btn-nuevo{
@@ -166,17 +177,14 @@ header h2{
 
     color:white;
 
+
     padding:14px 25px;
 
-    border:none;
 
     border-radius:10px;
 
+
     font-size:16px;
-
-    font-weight:bold;
-
-    cursor:pointer;
 
 
 }
@@ -185,9 +193,41 @@ header h2{
 
 .btn-nuevo:hover{
 
-
     background:#16a34a;
 
+}
+
+
+
+
+
+
+.btn-guardar{
+
+
+    background:#2563eb;
+
+
+    color:white;
+
+
+    padding:13px 30px;
+
+
+    border-radius:8px;
+
+
+    margin-top:20px;
+
+
+}
+
+
+
+.btn-guardar:hover{
+
+
+    background:#1d4ed8;
 
 }
 
@@ -197,29 +237,30 @@ header h2{
 
 
 
-/* =====================================
-              FORMULARIOS
-===================================== */
+
+
+/* ==========================
+        FORMULARIOS
+========================== */
 
 
 #formularioUsuario,
 #editarUsuario{
 
 
-    margin-top:25px;
-
-    padding:30px;
-
-
     background:#f8fafc;
+
+
+    padding:25px;
 
 
     border-radius:15px;
 
 
-    border:
+    margin-bottom:30px;
 
-    1px solid #e2e8f0;
+
+    border:1px solid #e2e8f0;
 
 
 }
@@ -232,7 +273,23 @@ header h2{
 
     color:#245784;
 
-    font-size:22px;
+
+}
+
+
+
+
+
+.grid-form{
+
+
+    display:grid;
+
+
+    grid-template-columns:repeat(2,1fr);
+
+
+    gap:15px;
 
 
 }
@@ -250,22 +307,16 @@ select{
     padding:13px;
 
 
-    margin:10px 0;
-
-
     border-radius:8px;
 
 
-    border:
-
-    1px solid #cbd5e1;
+    border:1px solid #cbd5e1;
 
 
     font-size:15px;
 
 
 }
-
 
 
 
@@ -275,52 +326,7 @@ select:focus{
 
     outline:none;
 
-
-    border:
-
-    2px solid #245784;
-
-
-}
-
-
-
-
-
-
-
-.btn-guardar{
-
-
-    background:#2563eb;
-
-
-    color:white;
-
-
-    padding:13px 28px;
-
-
-    border:none;
-
-
-    border-radius:8px;
-
-
-    cursor:pointer;
-
-
-    font-weight:bold;
-
-
-}
-
-
-
-.btn-guardar:hover{
-
-
-    background:#1d4ed8;
+    border:2px solid #245784;
 
 
 }
@@ -332,39 +338,18 @@ select:focus{
 
 
 
+/* ==========================
+        TABLA
+========================== */
 
-/* =====================================
-              TABLA
-===================================== */
 
-
-table{
+.tabla-contenedor{
 
 
     width:100%;
 
 
-    margin-top:35px;
-
-
-    border-collapse:separate;
-
-
-    border-spacing:0;
-
-
-    background:white;
-
-
-    border-radius:14px;
-
-
-    overflow:hidden;
-
-
-    box-shadow:
-
-    0 5px 15px rgba(0,0,0,.08);
+    overflow-x:auto;
 
 
 }
@@ -372,10 +357,32 @@ table{
 
 
 
-thead{
+.tabla-usuarios{
+
+
+    width:100%;
+
+
+    border-collapse:collapse;
+
+
+    table-layout:fixed;
+
+
+    margin-top:30px;
+
+
+}
+
+
+
+
+
+.tabla-usuarios thead{
 
 
     background:#245784;
+
 
     color:white;
 
@@ -384,34 +391,14 @@ thead{
 
 
 
-th{
+
+.tabla-usuarios th{
 
 
-    padding:18px;
+    padding:16px;
 
 
-    text-align:left;
-
-
-    font-size:15px;
-
-
-}
-
-
-
-td{
-
-
-    padding:18px;
-
-
-    border-bottom:
-
-    1px solid #e5e7eb;
-
-
-    vertical-align:middle;
+    text-align:center;
 
 
 }
@@ -419,7 +406,27 @@ td{
 
 
 
-tbody tr:hover{
+.tabla-usuarios td{
+
+
+    padding:16px;
+
+
+    text-align:center;
+
+
+    border-bottom:1px solid #e5e7eb;
+
+
+    word-wrap:break-word;
+
+
+}
+
+
+
+
+.tabla-usuarios tr:hover{
 
 
     background:#f8fafc;
@@ -432,56 +439,15 @@ tbody tr:hover{
 
 
 
-/* ANCHO COLUMNAS */
 
 
-th:nth-child(1),
-td:nth-child(1){
-
-    width:12%;
-
-}
+/* ==========================
+        ANCHO COLUMNAS
+========================== */
 
 
-
-th:nth-child(2),
-td:nth-child(2){
-
-    width:12%;
-
-}
-
-
-
-th:nth-child(3),
-td:nth-child(3){
-
-    width:23%;
-
-}
-
-
-
-th:nth-child(4),
-td:nth-child(4){
-
-    width:15%;
-
-}
-
-
-
-th:nth-child(5),
-td:nth-child(5){
-
-    width:18%;
-
-}
-
-
-
-th:nth-child(6),
-td:nth-child(6){
+.tabla-usuarios th:nth-child(1),
+.tabla-usuarios td:nth-child(1){
 
     width:10%;
 
@@ -489,10 +455,64 @@ td:nth-child(6){
 
 
 
-th:nth-child(7),
-td:nth-child(7){
+.tabla-usuarios th:nth-child(2),
+.tabla-usuarios td:nth-child(2){
 
-    width:20%;
+    width:10%;
+
+}
+
+
+
+
+.tabla-usuarios th:nth-child(3),
+.tabla-usuarios td:nth-child(3){
+
+    width:22%;
+
+}
+
+
+
+
+
+.tabla-usuarios th:nth-child(4),
+.tabla-usuarios td:nth-child(4){
+
+    width:14%;
+
+}
+
+
+
+
+
+.tabla-usuarios th:nth-child(5),
+.tabla-usuarios td:nth-child(5){
+
+    width:18%;
+
+}
+
+
+
+
+
+.tabla-usuarios th:nth-child(6),
+.tabla-usuarios td:nth-child(6){
+
+    width:10%;
+
+}
+
+
+
+
+
+.tabla-usuarios th:nth-child(7),
+.tabla-usuarios td:nth-child(7){
+
+    width:16%;
 
 }
 
@@ -503,15 +523,13 @@ td:nth-child(7){
 
 
 
-/* =====================================
-              ESTADOS
-===================================== */
+
+/* ==========================
+        ESTADOS
+========================== */
 
 
 .estado-activo{
-
-
-    display:inline-block;
 
 
     background:#dcfce7;
@@ -529,18 +547,11 @@ td:nth-child(7){
     font-weight:bold;
 
 
-    font-size:14px;
-
-
 }
 
 
 
-
 .estado-inactivo{
-
-
-    display:inline-block;
 
 
     background:#fee2e2;
@@ -566,9 +577,10 @@ td:nth-child(7){
 
 
 
-/* =====================================
-              ACCIONES
-===================================== */
+
+/* ==========================
+        BOTONES TABLA
+========================== */
 
 
 .btn-editar{
@@ -580,22 +592,13 @@ td:nth-child(7){
     color:white;
 
 
-    border:none;
-
-
     padding:10px 18px;
 
 
     border-radius:8px;
 
 
-    cursor:pointer;
-
-
-    font-weight:bold;
-
-
-    margin-right:8px;
+    margin:3px;
 
 
 }
@@ -613,8 +616,6 @@ td:nth-child(7){
 
 
 
-
-
 .btn-desactivar{
 
 
@@ -624,19 +625,13 @@ td:nth-child(7){
     color:white;
 
 
-    border:none;
-
-
     padding:10px 18px;
 
 
     border-radius:8px;
 
 
-    cursor:pointer;
-
-
-    font-weight:bold;
+    margin:3px;
 
 
 }
@@ -656,31 +651,20 @@ td:nth-child(7){
 
 
 
-/* =====================================
-              RESPONSIVE
-===================================== */
-
-
 @media(max-width:900px){
 
 
-.container{
+.grid-form{
 
-
-    width:95%;
-
-    padding:20px;
-
+    grid-template-columns:1fr;
 
 }
 
 
 
-table{
+.container{
 
-
-    font-size:13px;
-
+    width:95%;
 
 }
 

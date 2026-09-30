@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Documentos — COEMSA</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f2f6fa;
+      color: #19354d;
+    }
+
+    header {
+      padding: 24px;
+      background: #245b86;
+      color: white;
+    }
+
+    h1 { margin: 0 0 18px; }
+
+    nav {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    nav a { color: white; }
+
+    main {
+      max-width: 1450px;
+      margin: 28px auto;
+      padding: 0 18px;
+    }
+
+    section {
+      padding: 24px;
+      background: white;
+      border-radius: 14px;
+    }
+
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .herramientas {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    input {
+      padding: 11px;
+      border: 1px solid #bbc9d5;
+      border-radius: 7px;
+      font: inherit;
+      width: 100%;
+      max-width: 460px;
+    }
+
+    .tabla { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 13px;
+      border-bottom: 1px solid #dce5ed;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eaf1f7;
+      white-space: nowrap;
+    }
+
+    td:first-child {
+      min-width: 220px;
+      max-width: 380px;
+      overflow-wrap: anywhere;
+    }
+
+    .estado {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 14px;
+      background: #edf0f4;
+      white-space: nowrap;
+    }
+
+    .aprobado { background: #dff5e6; color: #146c38; }
+    .rechazado { background: #ffe3e3; color: #a42020; }
+    .pendiente { background: #fff2cc; color: #775500; }
+
+    .paginacion {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    #mensaje { min-height: 24px; }
+
+    .nota {
+      color: #526577;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body>
+
+<nav
+  id="accesos-documentales-coemsa"
+  aria-label="Accesos de documentos"
+  style="display:flex;flex-wrap:wrap;gap:18px;padding:16px 24px;background:#eaf1f7;"
+>
+  <a href="/subir_documento.html">Subir PDF</a>
+  <a href="/documentos.html">Ver documentos</a>
+  <a href="/proyectos.html">Proyectos</a>
+  
+</nav>
+<style>
+  #accesos-documentales-coemsa a {
+    color: #17324d;
+    font-weight: bold;
+  }
+
+  #accesos-documentales-coemsa a:focus-visible {
+    outline: 3px solid #e6a700;
+    outline-offset: 3px;
+  }
+</style>
+
+  <header>
+    <h1>📄 Documentos COEMSA</h1>
+
+    <nav>
+      <a id="volver" href="/login.html">Volver al panel</a>
+      <a href="/proyectos.html">Proyectos</a>
+
+      <button type="button" onclick="cerrarSesion()">
+        Cerrar sesión
+      </button>
+    </nav>
+  </header>
+
+  <main>
+    <p id="mensaje" role="status" aria-live="polite">
+      Comprobando sesión...
+    </p>
+
+    <section>
+      <h2>Documentos disponibles</h2>
+
+      <p class="nota">
+        Se muestran los documentos disponibles según tu rol y asignaciones.
+        Puedes subir PDF de hasta 10 MB desde el acceso Subir PDF.
+      </p>
+
+      <div class="herramientas">
+        <label for="buscar">Buscar en esta página:</label>
+
+        <input
+          id="buscar"
+          type="search"
+          placeholder="Nombre, proyecto, área o estado"
+          disabled
+        >
+
+        <button id="actualizar" type="button" disabled>
+          Actualizar
+        </button>
+      </div>
+
+      <p id="contador"></p>
+
+      <div class="tabla">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Archivo</th>
+              <th scope="col">Proyecto o área</th>
+              <th scope="col">Carpeta</th>
+              <th scope="col">Subido por</th>
+              <th scope="col">Fecha</th>
+              <th scope="col">Versión</th>
+              <th scope="col">Estado</th>
+            </tr>
+          </thead>
+
+          <tbody id="listaDocumentos"></tbody>
+        </table>
+      </div>
+
+      <div class="paginacion">
+        <button id="anterior" type="button" disabled>
+          Anterior
+        </button>
+
+        <span id="paginaActual">Página 1</span>
+
+        <button id="siguiente" type="button" disabled>
+          Siguiente
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/auth.js"></script>
+
+  <script>
+    const mensaje = document.getElementById("mensaje");
+    const lista = document.getElementById("listaDocumentos");
+    const buscar = document.getElementById("buscar");
+    const actualizar = document.getElementById("actualizar");
+    const anterior = document.getElementById("anterior");
+    const siguiente = document.getElementById("siguiente");
+
+    let documentos = [];
+    let pagina = 1;
+    let hayMas = false;
+    let cargando = false;
+    let cargaValida = false;
+
+    function normalizar(valor) {
+      return String(valor ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+    }
+
+    function destino(documento) {
+      if (documento.id_proyecto != null) {
+        return documento.nombre_proyecto ||
+          "Proyecto sin nombre disponible";
+      }
+
+      return documento.nombre_area || "Sin clasificar";
+    }
+
+    function fechaLocal(valor) {
+      if (!valor) return "Sin fecha";
+
+      const fecha = new Date(valor);
+
+      if (Number.isNaN(fecha.getTime())) {
+        return "Fecha no disponible";
+      }
+
+      return fecha.toLocaleString("es-PE", {
+        timeZone: "America/Lima",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function actualizarBotones() {
+      actualizar.disabled = cargando;
+      buscar.disabled = cargando || !cargaValida;
+
+      anterior.disabled =
+        cargando || pagina <= 1;
+
+      siguiente.disabled =
+        cargando || !cargaValida || !hayMas;
+
+      document.getElementById("paginaActual").textContent =
+        "Página " + pagina;
+    }
+
+    function mostrarDocumentos() {
+      const termino = normalizar(buscar.value.trim());
+
+      const visibles = documentos.filter((documento) => {
+        const contenido = [
+          documento.nombre_archivo,
+          documento.descripcion,
+          destino(documento),
+          documento.nombre_carpeta,
+          documento.subido_por,
+          documento.estado_documento
+        ].join(" ");
+
+        return normalizar(contenido).includes(termino);
+      });
+
+      lista.replaceChildren();
+
+      document.getElementById("contador").textContent =
+        `${visibles.length} de ${documentos.length} documentos de esta página.`;
+
+      if (visibles.length === 0) {
+        const fila = document.createElement("tr");
+        const celda = document.createElement("td");
+
+        celda.colSpan = 7;
+        celda.textContent = termino
+          ? "No hay coincidencias en esta página."
+          : "No hay documentos disponibles en esta página.";
+
+        fila.appendChild(celda);
+        lista.appendChild(fila);
+        return;
+      }
+
+      for (const documento of visibles) {
+        const fila = document.createElement("tr");
+
+        const valores = [
+          documento.nombre_archivo,
+          destino(documento),
+          documento.nombre_carpeta || "Sin carpeta",
+          documento.subido_por || "Sin registro",
+          fechaLocal(documento.fecha_subida),
+          documento.version || "—"
+        ];
+
+        for (const valor of valores) {
+          const celda = document.createElement("td");
+          celda.textContent = valor ?? "";
+          fila.appendChild(celda);
+        }
+
+        const celdaEstado = document.createElement("td");
+        const etiqueta = document.createElement("span");
+
+        const estado = documento.estado_documento || "Sin estado";
+        const clase = normalizar(estado).trim();
+
+        etiqueta.classList.add("estado");
+
+        if (["aprobado", "rechazado", "pendiente"].includes(clase)) {
+          etiqueta.classList.add(clase);
+        }
+
+        etiqueta.textContent = estado;
+        celdaEstado.appendChild(etiqueta);
+        fila.appendChild(celdaEstado);
+        lista.appendChild(fila);
+      }
+    }
+
+    async function cargarDocumentos(nuevaPagina = pagina) {
+      if (cargando) return;
+
+      cargando = true;
+      cargaValida = false;
+      documentos = [];
+      lista.replaceChildren();
+
+      document.getElementById("contador").textContent = "";
+      mensaje.textContent = "Cargando documentos...";
+      actualizarBotones();
+
+      try {
+        const respuesta = await fetch(
+          "/documentos?pagina=" + nuevaPagina,
+          {
+            credentials: "same-origin",
+            cache: "no-store"
+          }
+        );
+
+        if (respuesta.status === 401) {
+          localStorage.removeItem("usuario");
+          window.location.replace("/login.html");
+          return;
+        }
+
+        const datos = await respuesta.json();
+
+        if (!respuesta.ok || !datos.success) {
+          throw new Error(
+            datos.mensaje || "No se pudieron cargar los documentos."
+          );
+        }
+
+        documentos = datos.documentos;
+        pagina = datos.pagina;
+        hayMas = datos.hay_mas;
+        cargaValida = true;
+
+        mostrarDocumentos();
+        mensaje.textContent = "";
+      } catch (error) {
+        hayMas = false;
+        mensaje.textContent =
+          error.message || "No se pudo conectar con el servidor.";
+      } finally {
+        cargando = false;
+        actualizarBotones();
+      }
+    }
+
+    buscar.addEventListener("input", mostrarDocumentos);
+
+    actualizar.addEventListener("click", () => {
+      cargarDocumentos();
+    });
+
+    anterior.addEventListener("click", () => {
+      if (pagina > 1) cargarDocumentos(pagina - 1);
+    });
+
+    siguiente.addEventListener("click", () => {
+      if (hayMas) cargarDocumentos(pagina + 1);
+    });
+
+    async function iniciar() {
+      const usuario = await verificarSesion();
+
+      if (!usuario) {
+        mensaje.textContent = "No se pudo comprobar la sesión.";
+        return;
+      }
+
+      const paneles = {
+        Administrador: "/admin.html",
+        Supervisor: "/supervisor.html",
+        Usuario: "/usuario.html"
+      };
+
+      document.getElementById("volver").href =
+        paneles[usuario.nombre_rol] || "/login.html";
+
+      await cargarDocumentos(1);
+    }
+
+    iniciar();
+  </script>
+</body>
+</html>

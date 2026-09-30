@@ -2,56 +2,51 @@ const express = require("express");
 
 const router = express.Router();
 
+const controlador = require("../controllers/aprobacionController");
 
-const controller = require("../controllers/aprobacionController");
+const {
+  verificarSesion,
+  permitirRoles
+} = require("../middlewares/auth");
 
-
-
-console.log("RUTAS APROBACIONES CARGADAS");
-
-
-// =====================================
-// LISTAR DOCUMENTOS PENDIENTES
-// =====================================
-
-router.get(
-    "/pendientes",
-    controller.pendientes
+// Todas las consultas y revisiones requieren sesión
+// de Administrador o Supervisor.
+router.use(
+  verificarSesion,
+  permitirRoles("Administrador", "Supervisor")
 );
 
+router.use((req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
 
+router.get("/pendientes", controlador.pendientes);
 
-// =====================================
-// HISTORIAL DE REVISIONES
-// =====================================
+router.get("/historial", controlador.historial);
 
-router.get(
-    "/historial",
-    controller.historial
+// Estas rutas reciben el ID DEL DOCUMENTO.
+router.put(
+  "/documentos/:idDocumento/aprobar",
+  controlador.aprobarDocumento
 );
-
-
-
-// =====================================
-// APROBAR DOCUMENTO
-// =====================================
 
 router.put(
-    "/aprobar/:id",
-    controller.aprobar
+  "/documentos/:idDocumento/rechazar",
+  controlador.rechazarDocumento
 );
 
-
-
-// =====================================
-// RECHAZAR DOCUMENTO
-// =====================================
-
+// El panel anterior enviaba el ID DE APROBACIÓN.
+// No lo interpretamos como un ID de documento.
 router.put(
-    "/rechazar/:id",
-    controller.rechazar
+  ["/aprobar/:id", "/rechazar/:id"],
+  (req, res) => {
+    res.status(409).json({
+      success: false,
+      mensaje:
+        "Este panel necesita actualizarse. Utiliza la nueva pantalla de revisión."
+    });
+  }
 );
-
-
 
 module.exports = router;

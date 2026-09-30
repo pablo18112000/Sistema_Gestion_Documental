@@ -1,135 +1,86 @@
-function login(){
-
-
-    let correo = 
-    document.getElementById("correo").value;
-
-
-    let password = 
-    document.getElementById("password").value;
-
-
-
-    fetch(
-
-        "https://sistemagestiondocumental-production-885c.up.railway.app/usuarios/login",
-
-        {
-
-            method:"POST",
-
-            headers:{
-
-                "Content-Type":"application/json"
-
-            },
-
-
-            body:JSON.stringify({
-
-                usuario:correo,
-
-                password:password
-
-            })
-
-
-        }
-
-    )
-
-
-    .then(res=>res.json())
-
-
-    .then(data=>{
-
-
-        if(!data.success){
-
-
-            document.getElementById("mensaje").innerHTML =
-            "❌ " + data.mensaje;
-
-
-            return;
-
-
-        }
-
-
-
-        let rol = data.usuario.nombre_rol;
-
-
-
-        // Guardar sesión del usuario
-
-        localStorage.setItem(
-
-            "usuario",
-
-            JSON.stringify(data.usuario)
-
-        );
-
-
-
-
-        // Redirección según rol
-
-        if(rol==="Supervisor"){
-
-
-            window.location.href="supervisor.html";
-
-
-        }
-
-
-        else if(rol==="Administrador"){
-
-
-            window.location.href="admin.html";
-
-
-        }
-
-
-        else if(rol==="Usuario"){
-
-
-            window.location.href="usuario.html";
-
-
-        }
-
-
-        else{
-
-
-            alert("Rol sin configuración");
-
-
-        }
-
-
-
-
-    })
-
-
-    .catch(error=>{
-
-
-        console.log(error);
-
-
-        document.getElementById("mensaje").innerHTML =
-        "❌ Error de conexión con el servidor";
-
-
+let loginEnCurso = false;
+
+async function login() {
+  if (loginEnCurso) return;
+
+  const campoCorreo = document.getElementById("correo");
+  const campoPassword = document.getElementById("password");
+  const mensaje = document.getElementById("mensaje");
+
+  const correo = campoCorreo.value.trim();
+  const password = campoPassword.value;
+
+  mensaje.textContent = "";
+
+  if (!correo || !password) {
+    mensaje.textContent = "Ingresa tu correo y contraseña.";
+    return;
+  }
+
+  loginEnCurso = true;
+  mensaje.textContent = "Iniciando sesión...";
+
+  try {
+    // Usa el mismo servidor desde el que abriste la página:
+    // localhost durante las pruebas y Railway al publicar.
+    const respuesta = await fetch("/usuarios/login", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        usuario: correo,
+        password
+      })
     });
 
+    const datos = await respuesta.json();
 
+    if (!respuesta.ok || !datos.success) {
+      localStorage.removeItem("usuario");
+      mensaje.textContent =
+        datos.mensaje || "No se pudo iniciar sesión.";
+      return;
+    }
+
+    const paginas = {
+      Administrador: "/admin.html",
+      Supervisor: "/supervisor.html",
+      Usuario: "/usuario.html"
+    };
+
+    const destino = paginas[datos.usuario?.nombre_rol];
+
+    if (!destino) {
+      mensaje.textContent =
+        "Tu rol no tiene una página configurada.";
+      return;
+    }
+
+    // Compatibilidad con las pantallas existentes.
+    // Este dato NO autoriza operaciones en el servidor.
+    localStorage.setItem(
+      "usuario",
+      JSON.stringify(datos.usuario)
+    );
+
+    campoPassword.value = "";
+    window.location.assign(destino);
+  } catch {
+    mensaje.textContent =
+      "No se pudo comunicar con el servidor. Inténtalo nuevamente.";
+  } finally {
+    loginEnCurso = false;
+  }
 }
+
+// Permitir iniciar sesión con Enter desde cualquiera de los campos.
+["correo", "password"].forEach((id) => {
+  document.getElementById(id)?.addEventListener("keydown", (evento) => {
+    if (evento.key === "Enter") {
+      evento.preventDefault();
+      login();
+    }
+  });
+});

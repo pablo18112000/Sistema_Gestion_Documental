@@ -1,3 +1,21 @@
-node_modules/
+credentials/
 .env
+node_modules/
 uploads/
+# Variables y credenciales
+.env
+.env.*
+!.env.example
+credentials/
+config/clave-drive.json
+google-drive.json
+client_secret*.json
+token.json
+token-*.json
+drive-token-*.json
+
+# Dependencias y archivos locales
+node_modules/
+uploads/
+*.log
+prueba_drive.pdf

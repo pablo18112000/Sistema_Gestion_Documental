@@ -1,158 +1,380 @@
 <!DOCTYPE html>
-
-<html>
-
-
+<html lang="es">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Subir documento | COEMSA</title>
 
-<title>
-Subir Documento
-</title>
+  <style>
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
 
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f2f6fa;
+      color: #17324d;
+    }
 
-<link rel="stylesheet" href="css/estilo.css?v=1">
+    header {
+      background: #245b83;
+      color: white;
+      padding: 24px;
+    }
 
+    header div,
+    main {
+      max-width: 850px;
+      margin: auto;
+    }
 
+    h1 { margin: 0 0 16px; }
+
+    nav {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    nav a { color: white; }
+
+    main { padding: 28px 20px; }
+
+    .tarjeta {
+      background: white;
+      border: 1px solid #dce5ee;
+      border-radius: 14px;
+      padding: 24px;
+    }
+
+    fieldset {
+      border: 0;
+      padding: 0;
+      margin: 0;
+      min-width: 0;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin: 20px 0 8px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #b9cbd9;
+      border-radius: 8px;
+      font: inherit;
+    }
+
+    textarea { resize: vertical; }
+
+    button,
+    .boton {
+      display: inline-block;
+      border: 0;
+      border-radius: 8px;
+      padding: 12px 18px;
+      background: #245b83;
+      color: white;
+      font: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      margin-top: 18px;
+    }
+
+    button:disabled {
+      background: #dfe6ed;
+      color: #596a78;
+      cursor: not-allowed;
+    }
+
+    :focus-visible {
+      outline: 3px solid #e6a700;
+      outline-offset: 3px;
+    }
+
+    p { line-height: 1.6; }
+    .error { color: #a12424; }
+    .correcto { color: #17623b; }
+  </style>
 </head>
 
-
-
 <body>
-
-
-
-<header>
-
-
-<h1>
-📁 Sistema de Gestión Documental
-</h1>
-
-
-<h2>
-Subir Documento
-</h2>
-
-
-
-</header>
-
-
-
-
-
-<section class="contenedor">
-
-
-
-<h2>
-📤 Nuevo Documento
-</h2>
-
-
-
-
-<div class="formulario">
-
-
-
-<label>
-Carpeta
-</label>
-
-
-<select id="carpeta">
-
-<option>
-Cargando...
-</option>
-
-</select>
-
-
-
-
-
-<label>
-Tipo de Archivo
-</label>
-
-
-<select id="tipo">
-
-
-<option>
-Cargando...
-</option>
-
-
-</select>
-
-
-
-
-
-<label>
-Descripción del documento
-</label>
-
-
-<textarea 
-id="descripcion"
-placeholder="Ingrese una descripción del documento">
-</textarea>
-
-
-
-
-
-<label>
-Seleccionar archivo
-</label>
-
-
-
-<input
-
-type="file"
-
-id="archivo"
-
->
-
-
-
-
-<button onclick="subirDocumento()">
-
-📤 Subir Documento
-
-</button>
-
-
-
-
-<p id="mensaje"></p>
-
-
-
-
-</div>
-
-
-
-</section>
-
-
-
-
-
-
-<script src="js/documentos.js"></script>
-
-
-
+  <header>
+    <div>
+      <h1>Subir documento a COEMSA</h1>
+
+      <nav>
+        <a id="volver" href="/login.html">Volver al panel</a>
+        <a href="/documentos.html">Ver documentos</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="tarjeta">
+      <p id="cuenta">Comprobando sesión…</p>
+
+      <p>
+        Selecciona una carpeta y un PDF de hasta 10 MB.
+        El documento quedará pendiente de revisión.
+      </p>
+
+      <p id="mensaje" role="status" aria-live="polite"></p>
+
+      <button id="recargar" type="button" hidden>
+        Volver a cargar carpetas
+      </button>
+
+      <form id="formulario">
+        <fieldset id="campos" disabled>
+          <label for="destino">Carpeta de destino</label>
+          <select id="destino" required>
+            <option value="">Selecciona una carpeta</option>
+          </select>
+
+          <label for="archivo">Archivo PDF</label>
+          <input
+            id="archivo"
+            type="file"
+            accept=".pdf,application/pdf"
+            required
+          >
+
+          <label for="descripcion">Descripción</label>
+          <textarea
+            id="descripcion"
+            rows="4"
+            maxlength="2000"
+            placeholder="Describe el contenido del documento"
+          ></textarea>
+
+          <button id="enviar" type="submit">
+            Subir documento
+          </button>
+        </fieldset>
+      </form>
+
+      <a id="verArchivo" class="boton" hidden
+         target="_blank" rel="noopener noreferrer">
+        Ver PDF subido
+      </a>
+    </section>
+  </main>
+
+  <script src="/js/auth.js"></script>
+
+  <script>
+    "use strict";
+
+    const campos = document.getElementById("campos");
+    const destino = document.getElementById("destino");
+    const archivo = document.getElementById("archivo");
+    const descripcion = document.getElementById("descripcion");
+    const mensaje = document.getElementById("mensaje");
+    const enviar = document.getElementById("enviar");
+    const recargar = document.getElementById("recargar");
+    const verArchivo = document.getElementById("verArchivo");
+
+    let ocupado = false;
+    let listo = false;
+
+    function informar(texto, clase = "") {
+      mensaje.textContent = texto;
+      mensaje.className = clase;
+    }
+
+    async function solicitud(url, opciones = {}) {
+      const respuesta = await fetch(url, {
+        ...opciones,
+        credentials: "same-origin",
+        cache: "no-store"
+      });
+
+      if (respuesta.status === 401) {
+        localStorage.removeItem("usuario");
+        location.replace("/login.html");
+        throw new Error("La sesión terminó.");
+      }
+
+      let datos;
+
+      try {
+        datos = await respuesta.json();
+      } catch {
+        throw new Error("No se recibió una respuesta válida del servidor.");
+      }
+
+      if (!respuesta.ok || datos.success !== true) {
+        throw new Error(datos.mensaje || "No se pudo completar la operación.");
+      }
+
+      return datos;
+    }
+
+    async function cargarCarpetas() {
+      if (ocupado) return;
+
+      ocupado = true;
+      listo = false;
+      campos.disabled = true;
+      recargar.hidden = true;
+      informar("Cargando carpetas autorizadas…");
+
+      try {
+        const datos = await solicitud("/documentos/destinos");
+
+        if (!Array.isArray(datos.carpetas)) {
+          throw new Error("La respuesta de carpetas no es válida.");
+        }
+
+        destino.replaceChildren(
+          new Option("Selecciona una carpeta", "")
+        );
+
+        for (const carpeta of datos.carpetas) {
+          const ubicacion = carpeta.id_proyecto !== null
+            ? carpeta.nombre_proyecto || "Proyecto"
+            : carpeta.nombre_area || "Área";
+
+          destino.add(new Option(
+            ubicacion + " — " + carpeta.nombre_carpeta,
+            String(carpeta.id_carpeta)
+          ));
+        }
+
+        listo = datos.carpetas.length > 0;
+        campos.disabled = !listo;
+
+        informar(
+          listo
+            ? ""
+            : "No tienes carpetas disponibles para subir. Solicita al administrador que revise tu área o asignaciones."
+        );
+      } catch (error) {
+        informar(error.message, "error");
+      } finally {
+        ocupado = false;
+        recargar.hidden = listo;
+      }
+    }
+
+    document.getElementById("formulario")
+      .addEventListener("submit", async (evento) => {
+        evento.preventDefault();
+
+        if (ocupado || !listo) return;
+
+        const pdf = archivo.files[0];
+
+        if (!pdf || !destino.value) {
+          informar("Selecciona una carpeta y un PDF.", "error");
+          return;
+        }
+
+        if (
+          !pdf.name.toLowerCase().endsWith(".pdf") ||
+          pdf.size === 0 ||
+          pdf.size > 10 * 1024 * 1024
+        ) {
+          informar("Selecciona un PDF de hasta 10 MB.", "error");
+          return;
+        }
+
+        const datos = new FormData();
+        datos.append("descripcion", descripcion.value.trim());
+        datos.append("archivo", pdf);
+
+        const idCarpeta = destino.value;
+
+        ocupado = true;
+        campos.disabled = true;
+        verArchivo.hidden = true;
+        enviar.textContent = "Subiendo…";
+        informar("Guardando el PDF en Drive. Espera la confirmación.");
+
+        try {
+          const resultado = await solicitud(
+            "/documentos/subir/" + encodeURIComponent(idCarpeta),
+            {
+              method: "POST",
+              body: datos
+            }
+          );
+
+          informar(resultado.mensaje, "correcto");
+
+          const id = Number(resultado.id_documento);
+
+          if (Number.isSafeInteger(id) && id > 0) {
+            verArchivo.href = "/archivos/" + id + "/ver";
+            verArchivo.hidden = false;
+          }
+
+          archivo.value = "";
+          descripcion.value = "";
+        } catch (error) {
+          // Obliga a volver a seleccionar el archivo para
+          // evitar repetir accidentalmente una subida incierta.
+          archivo.value = "";
+
+          informar(
+            error.message +
+            " Revisa “Ver documentos” antes de volver a subir el mismo PDF.",
+            "error"
+          );
+        } finally {
+          ocupado = false;
+          campos.disabled = !listo;
+          enviar.textContent = "Subir documento";
+        }
+      });
+
+    recargar.addEventListener("click", cargarCarpetas);
+
+    async function iniciar() {
+      try {
+        const usuario = await verificarSesion();
+
+        if (!usuario) {
+          informar("Inicia sesión para subir documentos.", "error");
+          return;
+        }
+
+        const paneles = {
+          Administrador: "/admin.html",
+          Supervisor: "/supervisor.html",
+          Usuario: "/usuario.html"
+        };
+
+        const panel = paneles[usuario.nombre_rol];
+
+        if (!panel) {
+          informar("Tu cuenta no tiene un rol permitido.", "error");
+          return;
+        }
+
+        document.getElementById("volver").href = panel;
+
+        document.getElementById("cuenta").textContent =
+          [
+            usuario.nombre,
+            usuario.apellido
+          ].filter(Boolean).join(" ") +
+          " — " +
+          (usuario.nombre_area || "Sin área");
+
+        await cargarCarpetas();
+      } catch {
+        informar("No se pudo cargar la pantalla. Recarga la página.", "error");
+      }
+    }
+
+    iniciar();
+  </script>
 </body>
-
-
 </html>
