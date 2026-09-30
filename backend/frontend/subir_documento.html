@@ -242,7 +242,7 @@
             : carpeta.nombre_area || "Área";
 
           destino.add(new Option(
-            ubicacion + " — " + carpeta.nombre_carpeta,
+            carpeta.ruta_completa || (ubicacion + " — " + carpeta.nombre_carpeta),
             String(carpeta.id_carpeta)
           ));
         }

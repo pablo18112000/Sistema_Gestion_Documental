@@ -1,3 +1,4 @@
+const subcarpetas = require("./subcarpetasDrive");
 const mysql = require("mysql2/promise");
 const path = require("path");
 const fs = require("fs/promises");
@@ -171,123 +172,20 @@ exports.listarDocumentos = async (req, res) => {
 
 exports.destinos = async (req, res) => {
   try {
-    const [carpetas] = await pool.query(
-      `
-        SELECT
-          c.id_carpeta,
-          c.nombre_carpeta,
-          s.id_proyecto,
-          p.nombre_proyecto,
-          s.id_area,
-          a.nombre_area
-        FROM carpetas_documentos c
-        INNER JOIN servicios_proyectos s
-          ON s.id_servicio = c.id_servicio
-        INNER JOIN areas a
-          ON a.id_area = s.id_area
-        LEFT JOIN proyectos p
-          ON p.id_proyecto = s.id_proyecto
-        WHERE s.estado = 1
-          AND a.estado = 1
-          AND c.id_carpeta_padre IS NULL
-          AND (
-            ? = 1
-            OR (
-              s.id_proyecto IS NOT NULL
-              AND EXISTS (
-                SELECT 1
-                FROM usuario_proyectos up
-                WHERE up.id_usuario = ?
-                  AND up.id_proyecto = s.id_proyecto
-              )
-            )
-            OR (
-              s.id_proyecto IS NULL
-              AND s.id_area = ?
-            )
-          )
-        ORDER BY
-          p.nombre_proyecto,
-          a.nombre_area,
-          c.nombre_carpeta
-      `,
-      [
-        req.usuario.nombre_rol === "Administrador" ? 1 : 0,
-        req.usuario.id_usuario,
-        req.usuario.id_area
-      ]
-    );
-
-    res.json({ success: true, carpetas });
+    const carpetas = await subcarpetas.listarDestinos(pool, req.usuario);
+    return res.json({ success: true, carpetas });
   } catch (error) {
-    responderError(res, error);
+    return responderError(res, error);
   }
 };
 
 async function comprobarDestino(conexion, idCarpeta, usuario, bloquear) {
-  if (!idValido(idCarpeta)) {
-    throw fallo(400, "Selecciona una carpeta válida.");
-  }
-
-  const [carpetas] = await conexion.query(
-    `
-      SELECT
-        c.id_carpeta,
-        c.nombre_carpeta,
-        c.id_drive,
-        c.id_carpeta_padre,
-        s.id_proyecto,
-        s.id_area
-      FROM carpetas_documentos c
-      INNER JOIN servicios_proyectos s
-        ON s.id_servicio = c.id_servicio
-      INNER JOIN areas a
-        ON a.id_area = s.id_area
-      WHERE c.id_carpeta = ?
-        AND s.estado = 1
-        AND a.estado = 1
-      ${bloquear ? "FOR UPDATE" : ""}
-    `,
-    [Number(idCarpeta)]
+  return subcarpetas.comprobar(
+    conexion,
+    idCarpeta,
+    usuario,
+    bloquear
   );
-
-  if (!carpetas.length) {
-    throw fallo(404, "La carpeta no está disponible.");
-  }
-
-  const carpeta = carpetas[0];
-
-  if (carpeta.id_carpeta_padre !== null) {
-    throw fallo(
-      409,
-      "La subida a subcarpetas todavía no está habilitada."
-    );
-  }
-
-  if (usuario.nombre_rol === "Administrador") {
-    return carpeta;
-  }
-
-  if (carpeta.id_proyecto !== null) {
-    const [asignaciones] = await conexion.query(
-      `
-        SELECT id_usuario
-        FROM usuario_proyectos
-        WHERE id_usuario = ?
-          AND id_proyecto = ?
-        ${bloquear ? "FOR UPDATE" : ""}
-      `,
-      [usuario.id_usuario, carpeta.id_proyecto]
-    );
-
-    if (!asignaciones.length) {
-      throw fallo(403, "No tienes permiso para subir a este proyecto.");
-    }
-  } else if (Number(carpeta.id_area) !== Number(usuario.id_area)) {
-    throw fallo(403, "Solo puedes subir documentos a tu área.");
-  }
-
-  return carpeta;
 }
 
 exports.validarDestino = async (req, res, next) => {
@@ -310,80 +208,8 @@ exports.validarDestino = async (req, res, next) => {
 // =====================================
 
 async function obtenerCarpetaDrive(conexion, carpeta) {
-  const raiz = process.env.GOOGLE_DRIVE_FOLDER_ID?.trim();
-
-  if (!raiz || !process.env.GOOGLE_REFRESH_TOKEN?.trim()) {
-    throw fallo(503, "La conexión con Drive no está configurada.");
-  }
-
-  const idConsultar = carpeta.id_drive || raiz;
-
-  const { data } = await drive.files.get(
-    {
-      fileId: idConsultar,
-      fields: "id,mimeType,trashed,parents,capabilities(canAddChildren)"
-    },
-    { timeout: 20000, retry: false }
-  );
-
-  if (
-    data.trashed ||
-    data.mimeType !== "application/vnd.google-apps.folder" ||
-    data.capabilities?.canAddChildren !== true
-  ) {
-    throw fallo(409, "La carpeta de Drive no permite agregar archivos.");
-  }
-
-  if (carpeta.id_drive) {
-    if (!data.parents?.includes(raiz)) {
-      throw fallo(
-        409,
-        "La carpeta de Drive no está dentro de la raíz de COEMSA."
-      );
-    }
-
-    return carpeta.id_drive;
-  }
-
-  const respuesta = await drive.files.create(
-    {
-      requestBody: {
-        name: "Carpeta " + carpeta.id_carpeta + " - " + carpeta.nombre_carpeta,
-        mimeType: "application/vnd.google-apps.folder",
-        parents: [raiz],
-        appProperties: {
-          coemsa_carpeta: String(carpeta.id_carpeta)
-        }
-      },
-      fields: "id"
-    },
-    { timeout: 30000, retry: false }
-  );
-
-  const idDrive = respuesta.data.id;
-
-  if (!idDrive) {
-    throw fallo(503, "Drive no devolvió el ID de la carpeta.");
-  }
-
-  // Permite recuperar una carpeta si falla el guardado posterior.
-  console.log("Carpeta Drive creada:", carpeta.id_carpeta, idDrive);
-
-  await conexion.query(
-    `
-      UPDATE carpetas_documentos
-      SET id_drive = ?
-      WHERE id_carpeta = ?
-    `,
-    [idDrive, carpeta.id_carpeta]
-  );
-
-  return idDrive;
+  return subcarpetas.asegurarEnDrive(conexion, carpeta);
 }
-
-// =====================================
-// SUBIR PDF + REGISTRAR EN MYSQL
-// =====================================
 
 exports.subirArchivo = async (req, res) => {
   let conexion;
