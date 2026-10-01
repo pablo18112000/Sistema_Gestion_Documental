@@ -242,7 +242,110 @@
     [hidden] {
       display: none !important;
     }
-  </style>
+  
+    .subida-carpeta {
+      margin: 0 0 24px;
+      padding: 24px;
+      background: white;
+      border: 1px solid #d7e1ea;
+      border-radius: 14px;
+      box-shadow: 0 3px 12px #12345408;
+    }
+
+    .subida-carpeta h2 {
+      margin-top: 0;
+    }
+
+    .form-subida-carpeta {
+      display: grid;
+      gap: 12px;
+      max-width: 720px;
+    }
+
+    .form-subida-carpeta label {
+      font-weight: bold;
+    }
+
+    .form-subida-carpeta input,
+    .form-subida-carpeta textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #b9cbd9;
+      border-radius: 8px;
+      font: inherit;
+    }
+
+    .form-subida-carpeta textarea {
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    .btn-subir-carpeta {
+      width: fit-content;
+      padding: 12px 20px;
+      border: 0;
+      border-radius: 8px;
+      background: #245b83;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .btn-subir-carpeta:hover {
+      background: #194565;
+    }
+
+    .btn-subir-carpeta:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    .mensaje-subida-carpeta {
+      margin: 14px 0 0;
+      font-weight: bold;
+    }
+
+    .crear-carpeta-area {
+      background: white;
+      border: 1px dashed #7f9db5;
+      cursor: default;
+    }
+
+    .crear-carpeta-area:hover {
+      background: white;
+    }
+
+    .crear-carpeta-area input {
+      width: 100%;
+      margin-top: 14px;
+      padding: 11px 12px;
+      border: 1px solid #b9cbd9;
+      border-radius: 8px;
+      font: inherit;
+    }
+
+    .crear-carpeta-area .crear-carpeta-boton {
+      width: 100%;
+      margin-top: 12px;
+      border: 0;
+      background: #245b83;
+      color: white;
+      font-weight: bold;
+    }
+
+    .crear-carpeta-area .crear-carpeta-boton:hover {
+      background: #194565;
+    }
+
+    .crear-carpeta-mensaje {
+      display: block;
+      min-height: 20px;
+      margin-top: 10px;
+      color: #526577;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+</style>
   <link rel="stylesheet" href="/css/navegacion.css">
 </head>
 
@@ -346,6 +449,68 @@
       hidden
     >
 
+      <section
+        id="subidaCarpeta"
+        class="subida-carpeta"
+        hidden
+      >
+
+        <h2>
+          Subir documento a esta carpeta
+        </h2>
+
+        <p
+          id="subidaDestino"
+          class="nota"
+        ></p>
+
+        <form
+          id="formSubidaCarpeta"
+          class="form-subida-carpeta"
+        >
+
+          <label for="archivoCarpeta">
+            Archivo PDF
+          </label>
+
+          <input
+            id="archivoCarpeta"
+            type="file"
+            accept=".pdf,application/pdf"
+            required
+          >
+
+          <label for="descripcionCarpeta">
+            Descripción
+          </label>
+
+          <textarea
+            id="descripcionCarpeta"
+            maxlength="2000"
+            placeholder="Describe el contenido del documento"
+          ></textarea>
+
+          <button
+            id="subirCarpetaBtn"
+            class="btn-subir-carpeta"
+            type="submit"
+          >
+            Subir PDF a esta carpeta
+          </button>
+
+        </form>
+
+        <p
+          id="mensajeSubidaCarpeta"
+          class="mensaje-subida-carpeta"
+          role="status"
+          aria-live="polite"
+        ></p>
+
+      </section>
+
+
+
       <h2>
         Documentos de esta carpeta
       </h2>
@@ -412,6 +577,11 @@
     let documentosActuales = [];
     let pasos = [];
     let cargando = false;
+    let cuentaActual = null;
+    let creandoTrabajador = false;
+    let creandoCarpetaTrabajador = false;
+    let creandoCarpetaArea = false;
+    let subiendoEnCarpeta = false;
 
     // Los documentos se cargan solo al abrir una ubicación.
     // El caché dura mientras permanezcas en esta página.
@@ -507,7 +677,226 @@
 
       pasos.push(paso);
 
-      $("buscar").value =
+  
+    $("formSubidaCarpeta")
+      .addEventListener(
+        "submit",
+        async (evento) => {
+
+          evento.preventDefault();
+
+          if (
+            subiendoEnCarpeta
+          ) {
+            return;
+          }
+
+          const actual =
+            pasos[
+              pasos.length - 1
+            ];
+
+          if (
+            !actual ||
+            actual.tipo !==
+              "carpeta"
+          ) {
+
+            window.alert(
+              "Abre primero una carpeta."
+            );
+
+            return;
+          }
+
+          const inputArchivo =
+            $("archivoCarpeta");
+
+          const archivoPDF =
+            inputArchivo.files[0];
+
+          const descripcion =
+            $("descripcionCarpeta")
+              .value
+              .trim();
+
+          if (!archivoPDF) {
+
+            window.alert(
+              "Selecciona un archivo PDF."
+            );
+
+            return;
+          }
+
+          if (
+            !archivoPDF.name
+              .toLowerCase()
+              .endsWith(".pdf")
+          ) {
+
+            window.alert(
+              "Solo se permiten archivos PDF."
+            );
+
+            return;
+          }
+
+          if (
+            archivoPDF.size >
+            10 * 1024 * 1024
+          ) {
+
+            window.alert(
+              "El PDF supera el límite de 10 MB."
+            );
+
+            return;
+          }
+
+          if (
+            [...descripcion].length >
+            2000
+          ) {
+
+            window.alert(
+              "La descripción supera los 2000 caracteres."
+            );
+
+            return;
+          }
+
+          const datosFormulario =
+            new FormData();
+
+          datosFormulario.append(
+            "archivo",
+            archivoPDF
+          );
+
+          datosFormulario.append(
+            "descripcion",
+            descripcion
+          );
+
+          subiendoEnCarpeta =
+            true;
+
+          $("subirCarpetaBtn")
+            .disabled =
+            true;
+
+          $("mensajeSubidaCarpeta")
+            .textContent =
+            "Subiendo PDF...";
+
+          try {
+
+            const respuesta =
+              await fetch(
+                "/documentos/subir/" +
+                encodeURIComponent(
+                  actual.id
+                ),
+                {
+                  method:
+                    "POST",
+
+                  credentials:
+                    "same-origin",
+
+                  cache:
+                    "no-store",
+
+                  body:
+                    datosFormulario
+                }
+              );
+
+            if (
+              respuesta.status === 401
+            ) {
+
+              window.location.replace(
+                "/login.html"
+              );
+
+              return;
+            }
+
+            let datos;
+
+            try {
+
+              datos =
+                await respuesta.json();
+
+            } catch {
+
+              throw new Error(
+                "El servidor no devolvió una respuesta válida."
+              );
+
+            }
+
+            if (
+              !respuesta.ok ||
+              datos.success !== true
+            ) {
+
+              throw new Error(
+                datos.mensaje ||
+                "No se pudo subir el documento."
+              );
+
+            }
+
+            $("formSubidaCarpeta")
+              .reset();
+
+            $("mensajeSubidaCarpeta")
+              .textContent =
+              datos.mensaje ||
+              "PDF subido correctamente.";
+
+            /*
+             * El documento nuevo debe aparecer
+             * inmediatamente en la tabla.
+             */
+            cacheDocumentos.clear();
+
+            await seleccionarDocumentos([
+              actual.id
+            ]);
+
+          } catch (error) {
+
+            $("mensajeSubidaCarpeta")
+              .textContent =
+              error.message ||
+              "No se pudo subir el documento.";
+
+            window.alert(
+              error.message ||
+              "No se pudo subir el documento."
+            );
+
+          } finally {
+
+            subiendoEnCarpeta =
+              false;
+
+            $("subirCarpetaBtn")
+              .disabled =
+              false;
+
+          }
+
+        }
+      );
+
+
+    $("buscar").value =
         "";
 
       dibujar();
@@ -1131,6 +1520,979 @@
     }
 
 
+
+    function esCarpetaPersonal(idCarpeta) {
+
+      const carpeta =
+        carpetas.find(
+          (item) =>
+            mismo(
+              item.id_carpeta,
+              idCarpeta
+            )
+        );
+
+      if (
+        !carpeta ||
+        Number(carpeta.id_area) !== 1 ||
+        carpeta.id_proyecto !== null ||
+        normalizar(
+          carpeta.nombre_carpeta
+        ) !== "personal"
+      ) {
+        return false;
+      }
+
+      const padre =
+        carpetas.find(
+          (item) =>
+            mismo(
+              item.id_carpeta,
+              carpeta.id_carpeta_padre
+            )
+        );
+
+      return Boolean(
+        padre &&
+        Number(padre.id_area) === 1 &&
+        padre.id_proyecto === null &&
+        normalizar(
+          padre.nombre_carpeta
+        ) === "recursos humanos" &&
+        padre.id_carpeta_padre === null &&
+        mismo(
+          padre.id_servicio,
+          carpeta.id_servicio
+        )
+      );
+    }
+
+
+    function puedeCrearTrabajador() {
+
+      if (!cuentaActual) {
+        return false;
+      }
+
+      return (
+        cuentaActual.nombre_rol ===
+          "Administrador" ||
+        (
+          cuentaActual.nombre_rol ===
+            "Supervisor" &&
+          Number(
+            cuentaActual.id_area
+          ) === 1
+        )
+      );
+    }
+
+
+    async function crearTrabajador() {
+
+      if (
+        creandoTrabajador ||
+        !puedeCrearTrabajador()
+      ) {
+        return;
+      }
+
+      const entrada =
+        window.prompt(
+          "Escribe el trabajador con el formato:\n" +
+          "CODIGO_APELLIDOS_NOMBRES\n\n" +
+          "Ejemplo: 60006489_FLORES_PEDRO",
+          ""
+        );
+
+      if (entrada === null) {
+        return;
+      }
+
+      const nombre =
+        entrada
+          .trim()
+          .toUpperCase()
+          .replace(/\s+/g, "_");
+
+      const formato =
+        /^[0-9]{4,20}(?:_[A-ZÁÉÍÓÚÑ-]{1,40}){2,10}$/u;
+
+      if (
+        !nombre ||
+        [...nombre].length > 150 ||
+        !formato.test(nombre)
+      ) {
+        window.alert(
+          "Formato incorrecto.\n\n" +
+          "Ejemplo:\n" +
+          "60006489_FLORES_PEDRO"
+        );
+
+        return;
+      }
+
+      creandoTrabajador =
+        true;
+
+      const rutaAnterior =
+        pasos.map(
+          (paso) => ({
+            ...paso
+          })
+        );
+
+      $("mensaje")
+        .textContent =
+        "Creando trabajador...";
+
+      try {
+
+        const respuesta =
+          await fetch(
+            "/documentos/personal/trabajadores",
+            {
+              method:
+                "POST",
+
+              credentials:
+                "same-origin",
+
+              cache:
+                "no-store",
+
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+
+              body:
+                JSON.stringify({
+                  nombre_trabajador:
+                    nombre
+                })
+            }
+          );
+
+        if (
+          respuesta.status === 401
+        ) {
+          window.location.replace(
+            "/login.html"
+          );
+
+          return;
+        }
+
+        let datos;
+
+        try {
+          datos =
+            await respuesta.json();
+        } catch {
+          throw new Error(
+            "El servidor no devolvió una respuesta válida."
+          );
+        }
+
+        if (
+          !respuesta.ok ||
+          datos.success !== true
+        ) {
+          throw new Error(
+            datos.mensaje ||
+            "No se pudo crear el trabajador."
+          );
+        }
+
+        /*
+         * Volver a consultar la organización
+         * y conservar la ubicación Personal.
+         */
+        await cargar();
+
+        pasos =
+          rutaAnterior;
+
+        dibujar();
+
+        $("mensaje")
+          .textContent =
+          datos.mensaje;
+
+      } catch (error) {
+
+        $("mensaje")
+          .textContent =
+          error.message ||
+          "No se pudo crear el trabajador.";
+
+        window.alert(
+          error.message ||
+          "No se pudo crear el trabajador."
+        );
+
+      } finally {
+
+        creandoTrabajador =
+          false;
+
+      }
+    }
+
+
+
+    function esCarpetaTrabajador(idCarpeta) {
+
+      const trabajador =
+        carpetas.find(
+          (item) =>
+            mismo(
+              item.id_carpeta,
+              idCarpeta
+            )
+        );
+
+      if (
+        !trabajador ||
+        Number(
+          trabajador.id_area
+        ) !== 1 ||
+        trabajador.id_proyecto !==
+          null
+      ) {
+        return false;
+      }
+
+      const personal =
+        carpetas.find(
+          (item) =>
+            mismo(
+              item.id_carpeta,
+              trabajador.id_carpeta_padre
+            )
+        );
+
+      if (
+        !personal ||
+        normalizar(
+          personal.nombre_carpeta
+        ) !== "personal" ||
+        Number(
+          personal.id_area
+        ) !== 1 ||
+        personal.id_proyecto !==
+          null ||
+        !mismo(
+          personal.id_servicio,
+          trabajador.id_servicio
+        )
+      ) {
+        return false;
+      }
+
+      const rrhh =
+        carpetas.find(
+          (item) =>
+            mismo(
+              item.id_carpeta,
+              personal.id_carpeta_padre
+            )
+        );
+
+      return Boolean(
+        rrhh &&
+        Number(
+          rrhh.id_area
+        ) === 1 &&
+        rrhh.id_proyecto === null &&
+        normalizar(
+          rrhh.nombre_carpeta
+        ) === "recursos humanos" &&
+        rrhh.id_carpeta_padre ===
+          null &&
+        mismo(
+          rrhh.id_servicio,
+          trabajador.id_servicio
+        )
+      );
+    }
+
+
+    function puedeCrearCarpetaTrabajador() {
+
+      return (
+        cuentaActual &&
+        (
+          cuentaActual.nombre_rol ===
+            "Administrador" ||
+          (
+            cuentaActual.nombre_rol ===
+              "Supervisor" &&
+            Number(
+              cuentaActual.id_area
+            ) === 1
+          )
+        )
+      );
+    }
+
+
+    async function crearCarpetaTrabajador(
+      idTrabajador
+    ) {
+
+      if (
+        creandoCarpetaTrabajador ||
+        !puedeCrearCarpetaTrabajador()
+      ) {
+        return;
+      }
+
+      const entrada =
+        window.prompt(
+          "Nombre de la nueva carpeta:",
+          ""
+        );
+
+      if (entrada === null) {
+        return;
+      }
+
+      const nombre =
+        entrada
+          .trim()
+          .replace(/\s+/g, " ");
+
+      if (
+        !nombre ||
+        [...nombre].length > 100 ||
+        /[\\/\u0000-\u001f]/.test(
+          nombre
+        ) ||
+        nombre === "." ||
+        nombre === ".."
+      ) {
+
+        window.alert(
+          "Escribe un nombre válido de hasta 100 caracteres, sin barras ni saltos de línea."
+        );
+
+        return;
+      }
+
+      creandoCarpetaTrabajador =
+        true;
+
+      const rutaAnterior =
+        pasos.map(
+          (paso) => ({
+            ...paso
+          })
+        );
+
+      $("mensaje")
+        .textContent =
+        "Creando carpeta...";
+
+      try {
+
+        const respuesta =
+          await fetch(
+            "/documentos/personal/trabajadores/" +
+            encodeURIComponent(
+              idTrabajador
+            ) +
+            "/carpetas",
+            {
+              method:
+                "POST",
+
+              credentials:
+                "same-origin",
+
+              cache:
+                "no-store",
+
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+
+              body:
+                JSON.stringify({
+                  nombre_carpeta:
+                    nombre
+                })
+            }
+          );
+
+        if (
+          respuesta.status === 401
+        ) {
+
+          window.location.replace(
+            "/login.html"
+          );
+
+          return;
+        }
+
+        let datos;
+
+        try {
+
+          datos =
+            await respuesta.json();
+
+        } catch {
+
+          throw new Error(
+            "El servidor no devolvió una respuesta válida."
+          );
+
+        }
+
+        if (
+          !respuesta.ok ||
+          datos.success !== true
+        ) {
+
+          throw new Error(
+            datos.mensaje ||
+            "No se pudo crear la carpeta."
+          );
+
+        }
+
+        /*
+         * Refrescar organización y regresar
+         * al mismo trabajador.
+         */
+        await cargar();
+
+        pasos =
+          rutaAnterior;
+
+        dibujar();
+
+        $("mensaje")
+          .textContent =
+          datos.mensaje;
+
+      } catch (error) {
+
+        $("mensaje")
+          .textContent =
+          error.message ||
+          "No se pudo crear la carpeta.";
+
+        window.alert(
+          error.message ||
+          "No se pudo crear la carpeta."
+        );
+
+      } finally {
+
+        creandoCarpetaTrabajador =
+          false;
+
+      }
+    }
+
+
+
+    function actualizarSubidaCarpeta(
+      actual
+    ) {
+
+      const panel =
+        $("subidaCarpeta");
+
+      const formulario =
+        $("formSubidaCarpeta");
+
+      if (
+        !panel ||
+        !formulario
+      ) {
+        return;
+      }
+
+      const mostrar =
+        Boolean(
+          actual &&
+          actual.tipo ===
+            "carpeta"
+        );
+
+      panel.hidden =
+        !mostrar;
+
+      if (!mostrar) {
+
+        formulario.reset();
+
+        $("mensajeSubidaCarpeta")
+          .textContent =
+          "";
+
+        return;
+      }
+
+      const ruta =
+        pasos
+          .map(
+            (paso) =>
+              paso.nombre
+          )
+          .join(
+            " / "
+          );
+
+      $("subidaDestino")
+        .textContent =
+        "Destino: " +
+        ruta;
+    }
+
+
+
+    function obtenerCarpeta(
+      idCarpeta
+    ) {
+
+      return (
+        carpetas.find(
+          (item) =>
+            mismo(
+              item.id_carpeta,
+              idCarpeta
+            )
+        ) ||
+        null
+      );
+
+    }
+
+
+    function esRaizAdministracionRRHH(
+      carpeta
+    ) {
+
+      if (!carpeta) {
+        return false;
+      }
+
+      if (
+        carpeta.id_proyecto !==
+          null ||
+        carpeta.id_carpeta_padre !==
+          null
+      ) {
+        return false;
+      }
+
+      const area =
+        Number(
+          carpeta.id_area
+        );
+
+      const nombre =
+        normalizar(
+          carpeta.nombre_carpeta
+        );
+
+      return (
+        (
+          area === 3 &&
+          nombre ===
+            "administracion"
+        )
+        ||
+        (
+          area === 1 &&
+          nombre ===
+            "recursos humanos"
+        )
+      );
+
+    }
+
+
+    function puedeCrearCarpetaArea(
+      carpeta
+    ) {
+
+      if (
+        !cuentaActual ||
+        !carpeta
+      ) {
+        return false;
+      }
+
+      if (
+        cuentaActual.nombre_rol ===
+          "Administrador"
+      ) {
+        return true;
+      }
+
+      return (
+        cuentaActual.nombre_rol ===
+          "Supervisor" &&
+        Number(
+          cuentaActual.id_area
+        ) ===
+        Number(
+          carpeta.id_area
+        )
+      );
+
+    }
+
+
+    async function crearCarpetaArea(
+      carpetaPadre,
+      campo,
+      boton,
+      mensaje
+    ) {
+
+      if (
+        creandoCarpetaArea ||
+        !carpetaPadre ||
+        !puedeCrearCarpetaArea(
+          carpetaPadre
+        )
+      ) {
+        return;
+      }
+
+      const nombre =
+        campo.value
+          .trim()
+          .replace(
+            /\s+/g,
+            " "
+          );
+
+      if (
+        !nombre ||
+        [...nombre].length > 100 ||
+        /[\\/\u0000-\u001f]/.test(
+          nombre
+        ) ||
+        nombre === "." ||
+        nombre === ".."
+      ) {
+
+        mensaje.textContent =
+          "Escribe un nombre válido de hasta 100 caracteres.";
+
+        campo.focus();
+
+        return;
+      }
+
+      if (
+        normalizar(
+          nombre
+        ) === "otros"
+      ) {
+
+        mensaje.textContent =
+          "Escribe un nombre específico en lugar de 'Otros'.";
+
+        campo.focus();
+
+        return;
+      }
+
+      creandoCarpetaArea =
+        true;
+
+      campo.disabled =
+        true;
+
+      boton.disabled =
+        true;
+
+      mensaje.textContent =
+        "Creando carpeta...";
+
+      const rutaAnterior =
+        pasos.map(
+          (paso) => ({
+            ...paso
+          })
+        );
+
+      try {
+
+        const respuesta =
+          await fetch(
+            "/documentos/administracion-rrhh/" +
+            encodeURIComponent(
+              carpetaPadre.id_carpeta
+            ) +
+            "/carpetas",
+            {
+              method:
+                "POST",
+
+              credentials:
+                "same-origin",
+
+              cache:
+                "no-store",
+
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+
+              body:
+                JSON.stringify({
+                  nombre_carpeta:
+                    nombre
+                })
+            }
+          );
+
+        if (
+          respuesta.status ===
+          401
+        ) {
+
+          window.location.replace(
+            "/login.html"
+          );
+
+          return;
+        }
+
+        let datos;
+
+        try {
+
+          datos =
+            await respuesta.json();
+
+        } catch {
+
+          throw new Error(
+            "El servidor no devolvió una respuesta válida."
+          );
+
+        }
+
+        if (
+          !respuesta.ok ||
+          datos.success !== true
+        ) {
+
+          throw new Error(
+            datos.mensaje ||
+            "No se pudo crear la carpeta."
+          );
+
+        }
+
+        /*
+         * Actualizar organización
+         * y regresar al mismo lugar.
+         */
+        await cargar();
+
+        pasos =
+          rutaAnterior;
+
+        dibujar();
+
+        $("mensaje")
+          .textContent =
+          datos.mensaje;
+
+      } catch (error) {
+
+        mensaje.textContent =
+          error.message ||
+          "No se pudo crear la carpeta.";
+
+        campo.disabled =
+          false;
+
+        boton.disabled =
+          false;
+
+        campo.focus();
+
+      } finally {
+
+        creandoCarpetaArea =
+          false;
+
+      }
+
+    }
+
+
+    function tarjetaCrearCarpetaArea(
+      carpetaPadre
+    ) {
+
+      const tarjetaNueva =
+        document.createElement(
+          "div"
+        );
+
+      tarjetaNueva.className =
+        "carpeta crear-carpeta-area";
+
+
+      const icono =
+        document.createElement(
+          "span"
+        );
+
+      icono.className =
+        "icono";
+
+      icono.textContent =
+        "➕";
+
+      icono.setAttribute(
+        "aria-hidden",
+        "true"
+      );
+
+
+      const titulo =
+        document.createElement(
+          "span"
+        );
+
+      titulo.className =
+        "nombre";
+
+      titulo.textContent =
+        "Crear carpeta";
+
+
+      const detalle =
+        document.createElement(
+          "span"
+        );
+
+      detalle.className =
+        "detalle";
+
+      detalle.textContent =
+        "Escribe el nombre de la nueva carpeta";
+
+
+      const campo =
+        document.createElement(
+          "input"
+        );
+
+      campo.type =
+        "text";
+
+      campo.maxLength =
+        100;
+
+      campo.autocomplete =
+        "off";
+
+      campo.placeholder =
+        "Nombre de la carpeta";
+
+      campo.setAttribute(
+        "aria-label",
+        "Nombre de la nueva carpeta"
+      );
+
+
+      const boton =
+        document.createElement(
+          "button"
+        );
+
+      boton.type =
+        "button";
+
+      boton.className =
+        "crear-carpeta-boton";
+
+      boton.textContent =
+        "Crear carpeta";
+
+
+      const mensaje =
+        document.createElement(
+          "span"
+        );
+
+      mensaje.className =
+        "crear-carpeta-mensaje";
+
+      mensaje.setAttribute(
+        "role",
+        "status"
+      );
+
+
+      boton.addEventListener(
+        "click",
+        () =>
+          crearCarpetaArea(
+            carpetaPadre,
+            campo,
+            boton,
+            mensaje
+          )
+      );
+
+
+      campo.addEventListener(
+        "keydown",
+        (evento) => {
+
+          if (
+            evento.key ===
+            "Enter"
+          ) {
+
+            evento.preventDefault();
+
+            boton.click();
+
+          }
+
+        }
+      );
+
+
+      tarjetaNueva.append(
+        icono,
+        titulo,
+        detalle,
+        campo,
+        boton,
+        mensaje
+      );
+
+
+      $("carpetas")
+        .appendChild(
+          tarjetaNueva
+        );
+
+    }
+
+
     function dibujar() {
 
       $("carpetas")
@@ -1171,6 +2533,10 @@
         actual
           ? actual.nombre
           : "Organización documental";
+
+      actualizarSubidaCarpeta(
+        actual
+      );
 
 
       /*
@@ -1657,6 +3023,26 @@
         "carpeta"
       ) {
 
+        
+        if (
+          esCarpetaTrabajador(
+            actual.id
+          ) &&
+          puedeCrearCarpetaTrabajador()
+        ) {
+
+          tarjeta(
+            "+ Crear carpeta",
+            "Crear una carpeta adicional dentro del trabajador",
+            () =>
+              crearCarpetaTrabajador(
+                actual.id
+              )
+          );
+
+        }
+
+
         const hijas =
           carpetas.filter(
             (c) =>
@@ -1665,6 +3051,23 @@
                 actual.id
               )
           );
+
+
+
+        if (
+          esCarpetaPersonal(
+            actual.id
+          ) &&
+          puedeCrearTrabajador()
+        ) {
+
+          tarjeta(
+            "+ Crear trabajador",
+            "Crear expediente y carpetas automáticas",
+            crearTrabajador
+          );
+
+        }
 
 
         for (
@@ -1685,6 +3088,28 @@
               nombre:
                 hija.nombre_carpeta
             })
+          );
+
+        }
+
+
+
+        const carpetaRaizActual =
+          obtenerCarpeta(
+            actual.id
+          );
+
+        if (
+          esRaizAdministracionRRHH(
+            carpetaRaizActual
+          ) &&
+          puedeCrearCarpetaArea(
+            carpetaRaizActual
+          )
+        ) {
+
+          tarjetaCrearCarpetaArea(
+            carpetaRaizActual
           );
 
         }
@@ -2166,6 +3591,8 @@
         }
 
 
+        cuentaActual = usuario;
+
         const paneles = {
 
           Administrador:
@@ -2211,6 +3638,7 @@
 
   </script>
 
+  <script src="/js/carpetasAdministracionRRHH.js"></script>
 </body>
 
 </html>

@@ -47,6 +47,21 @@ let subidasActivas = 0;
 router.get("/organizacion", organizacion.consultar);
 router.get("/buscar", organizacion.buscarGeneral);
 
+// Crear expediente de trabajador en Recursos Humanos.
+router.post("/personal/trabajadores", organizacion.crearTrabajador);
+
+// Crear carpeta directa en Administración o Recursos Humanos.
+router.post(
+  "/administracion-rrhh/:idPadre/carpetas",
+  organizacion.crearCarpetaAdministracionRRHH
+);
+
+// Crear carpeta adicional dentro de un trabajador.
+router.post(
+  "/personal/trabajadores/:idTrabajador/carpetas",
+  organizacion.crearCarpetaTrabajador
+);
+
 // Operaciones existentes.
 router.get("/", controlador.listarDocumentos);
 router.get("/destinos", controlador.destinos);

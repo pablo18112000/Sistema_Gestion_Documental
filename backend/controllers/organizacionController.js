@@ -510,6 +510,901 @@ exports.consultar = async (req, res) => {
   }
 };
 
+
+/*
+ * =====================================
+ * CREAR EXPEDIENTE DE TRABAJADOR
+ * =====================================
+ *
+ * Estructura:
+ *
+ * Personal
+ * └── CODIGO_APELLIDOS_NOMBRES
+ *     ├── Contratos
+ *     ├── Vacaciones y Permisos
+ *     ├── Capacitaciones
+ *     └── Documentos Laborales
+ *
+ * Puede crear:
+ * - Administrador
+ * - Supervisor de Recursos Humanos
+ */
+exports.crearTrabajador = async (req, res) => {
+
+  const rol =
+    req.usuario?.nombre_rol;
+
+  const area =
+    Number(req.usuario?.id_area);
+
+  const autorizado =
+    rol === "Administrador" ||
+    (
+      rol === "Supervisor" &&
+      area === 1
+    );
+
+  if (!autorizado) {
+    return res.status(403).json({
+      success: false,
+      mensaje:
+        "Solo el Administrador o el Supervisor de Recursos Humanos puede crear trabajadores."
+    });
+  }
+
+  const entrada =
+    typeof req.body?.nombre_trabajador === "string"
+      ? req.body.nombre_trabajador
+      : "";
+
+  const nombre =
+    entrada
+      .trim()
+      .toUpperCase()
+      .replace(/\s+/g, "_");
+
+  /*
+   * Formato esperado:
+   * 60006489_FLORES_PEDRO
+   *
+   * También permite nombres compuestos:
+   * 60006489_FLORES_GARCIA_PEDRO_LUIS
+   */
+  const formato =
+    /^[0-9]{4,20}(?:_[A-ZÁÉÍÓÚÑ-]{1,40}){2,10}$/u;
+
+  if (
+    !nombre ||
+    [...nombre].length > 150 ||
+    !formato.test(nombre)
+  ) {
+    return res.status(400).json({
+      success: false,
+      mensaje:
+        "Usa el formato CODIGO_APELLIDOS_NOMBRES. Ejemplo: 60006489_FLORES_PEDRO."
+    });
+  }
+
+  const categorias = [
+    "Contratos",
+    "Vacaciones y Permisos",
+    "Capacitaciones",
+    "Documentos Laborales"
+  ];
+
+  let conexion;
+
+  try {
+
+    conexion =
+      await pool.getConnection();
+
+    await conexion.beginTransaction();
+
+    /*
+     * Buscar y bloquear la carpeta Personal correcta.
+     * No se acepta un ID enviado desde el navegador.
+     */
+    const [personales] =
+      await conexion.query(`
+        SELECT
+          c.id_carpeta,
+          c.id_servicio
+        FROM carpetas_documentos c
+
+        INNER JOIN carpetas_documentos padre
+          ON padre.id_carpeta = c.id_carpeta_padre
+          AND padre.id_servicio = c.id_servicio
+
+        INNER JOIN servicios_proyectos s
+          ON s.id_servicio = c.id_servicio
+
+        INNER JOIN areas a
+          ON a.id_area = s.id_area
+
+        WHERE s.id_area = 1
+          AND s.id_proyecto IS NULL
+          AND s.estado = 1
+          AND a.estado = 1
+
+          AND c.nombre_carpeta = 'Personal'
+
+          AND padre.nombre_carpeta =
+            'Recursos Humanos'
+
+          AND padre.id_carpeta_padre IS NULL
+
+        FOR UPDATE
+      `);
+
+    if (personales.length !== 1) {
+      const error =
+        new Error(
+          "No se encontró una única carpeta Personal de Recursos Humanos."
+        );
+
+      error.status = 409;
+      throw error;
+    }
+
+    const personal =
+      personales[0];
+
+    /*
+     * Evitar dos trabajadores con el mismo nombre.
+     * Personal está bloqueada dentro de la transacción.
+     */
+    const [existentes] =
+      await conexion.query(`
+        SELECT
+          id_carpeta
+        FROM carpetas_documentos
+        WHERE id_servicio = ?
+          AND id_carpeta_padre = ?
+          AND nombre_carpeta = ?
+        FOR UPDATE
+      `, [
+        personal.id_servicio,
+        personal.id_carpeta,
+        nombre
+      ]);
+
+    if (existentes.length) {
+      const error =
+        new Error(
+          "Ya existe un trabajador con ese código y nombre."
+        );
+
+      error.status = 409;
+      throw error;
+    }
+
+    /*
+     * Crear carpeta principal del trabajador.
+     */
+    const [trabajador] =
+      await conexion.query(`
+        INSERT INTO carpetas_documentos (
+          id_servicio,
+          nombre_carpeta,
+          descripcion,
+          id_carpeta_padre,
+          id_drive
+        )
+        VALUES (?, ?, ?, ?, NULL)
+      `, [
+        personal.id_servicio,
+        nombre,
+        "Expediente personal del trabajador",
+        personal.id_carpeta
+      ]);
+
+    /*
+     * Crear automáticamente las cuatro categorías.
+     */
+    for (const categoria of categorias) {
+
+      await conexion.query(`
+        INSERT INTO carpetas_documentos (
+          id_servicio,
+          nombre_carpeta,
+          descripcion,
+          id_carpeta_padre,
+          id_drive
+        )
+        VALUES (?, ?, ?, ?, NULL)
+      `, [
+        personal.id_servicio,
+        categoria,
+        "Documentación de " + categoria,
+        trabajador.insertId
+      ]);
+
+    }
+
+    await conexion.commit();
+
+    return res.status(201).json({
+      success: true,
+
+      mensaje:
+        "Trabajador creado correctamente con sus cuatro carpetas.",
+
+      trabajador: {
+        id_carpeta:
+          trabajador.insertId,
+
+        nombre_carpeta:
+          nombre,
+
+        categorias
+      }
+    });
+
+  } catch (error) {
+
+    if (conexion) {
+      try {
+        await conexion.rollback();
+      } catch {
+        conexion.destroy();
+        conexion = null;
+      }
+    }
+
+    console.error(
+      "Error creando trabajador:",
+      error.code ||
+      error.status ||
+      "ERROR_INTERNO"
+    );
+
+    const estado =
+      [400, 403, 409].includes(
+        Number(error.status)
+      )
+        ? Number(error.status)
+        : 500;
+
+    return res.status(estado).json({
+      success: false,
+
+      mensaje:
+        estado === 500
+          ? "No se pudo crear el trabajador. Revisa la lista antes de repetir."
+          : error.message
+    });
+
+  } finally {
+
+    if (conexion) {
+      conexion.release();
+    }
+
+  }
+};
+
+
+/*
+ * =====================================
+ * CREAR CARPETA DENTRO DE UN TRABAJADOR
+ * =====================================
+ *
+ * Solo permite crear dentro de:
+ *
+ * Recursos Humanos
+ * └── Personal
+ *     └── TRABAJADOR
+ *         └── NUEVA CARPETA
+ *
+ * No admite proyectos ni otras áreas.
+ */
+exports.crearCarpetaTrabajador = async (req, res) => {
+
+  const rol =
+    req.usuario?.nombre_rol;
+
+  const area =
+    Number(req.usuario?.id_area);
+
+  const autorizado =
+    rol === "Administrador" ||
+    (
+      rol === "Supervisor" &&
+      area === 1
+    );
+
+  if (!autorizado) {
+    return res.status(403).json({
+      success: false,
+      mensaje:
+        "Solo el Administrador o el Supervisor de Recursos Humanos puede crear carpetas de trabajadores."
+    });
+  }
+
+  const idTrabajador =
+    Number(
+      req.params.idTrabajador
+    );
+
+  if (
+    !Number.isSafeInteger(
+      idTrabajador
+    ) ||
+    idTrabajador < 1 ||
+    idTrabajador > 2147483647
+  ) {
+    return res.status(400).json({
+      success: false,
+      mensaje:
+        "El trabajador seleccionado no es válido."
+    });
+  }
+
+  const entrada =
+    typeof req.body?.nombre_carpeta ===
+      "string"
+      ? req.body.nombre_carpeta
+      : "";
+
+  const nombre =
+    entrada
+      .trim()
+      .replace(/\s+/g, " ");
+
+  if (
+    !nombre ||
+    [...nombre].length > 100 ||
+    /[\\/\u0000-\u001f]/.test(nombre) ||
+    nombre === "." ||
+    nombre === ".."
+  ) {
+    return res.status(400).json({
+      success: false,
+      mensaje:
+        "Escribe un nombre de carpeta de hasta 100 caracteres, sin barras ni saltos de línea."
+    });
+  }
+
+  let conexion;
+
+  try {
+
+    conexion =
+      await pool.getConnection();
+
+    await conexion.beginTransaction();
+
+    /*
+     * Verificar que el ID recibido sea exactamente
+     * una carpeta de trabajador dentro de Personal.
+     */
+    const [trabajadores] =
+      await conexion.query(`
+        SELECT
+          trabajador.id_carpeta,
+          trabajador.id_servicio,
+          trabajador.nombre_carpeta,
+
+          personal.id_carpeta
+            AS id_personal
+
+        FROM carpetas_documentos trabajador
+
+        INNER JOIN carpetas_documentos personal
+          ON personal.id_carpeta =
+             trabajador.id_carpeta_padre
+          AND personal.id_servicio =
+              trabajador.id_servicio
+
+        INNER JOIN carpetas_documentos rrhh
+          ON rrhh.id_carpeta =
+             personal.id_carpeta_padre
+          AND rrhh.id_servicio =
+              trabajador.id_servicio
+
+        INNER JOIN servicios_proyectos s
+          ON s.id_servicio =
+             trabajador.id_servicio
+
+        INNER JOIN areas a
+          ON a.id_area =
+             s.id_area
+
+        WHERE trabajador.id_carpeta = ?
+
+          AND s.id_area = 1
+          AND s.id_proyecto IS NULL
+          AND s.estado = 1
+          AND a.estado = 1
+
+          AND personal.nombre_carpeta =
+            'Personal'
+
+          AND rrhh.nombre_carpeta =
+            'Recursos Humanos'
+
+          AND rrhh.id_carpeta_padre
+            IS NULL
+
+        FOR UPDATE
+      `, [
+        idTrabajador
+      ]);
+
+    if (trabajadores.length !== 1) {
+
+      const error =
+        new Error(
+          "Solo se pueden crear carpetas dentro de un trabajador de Recursos Humanos."
+        );
+
+      error.status = 409;
+
+      throw error;
+    }
+
+    const trabajador =
+      trabajadores[0];
+
+    /*
+     * Evitar duplicados dentro del mismo trabajador.
+     */
+    const [existentes] =
+      await conexion.query(`
+        SELECT
+          id_carpeta
+        FROM carpetas_documentos
+        WHERE id_servicio = ?
+          AND id_carpeta_padre = ?
+          AND LOWER(
+                TRIM(nombre_carpeta)
+              ) = LOWER(?)
+        FOR UPDATE
+      `, [
+        trabajador.id_servicio,
+        trabajador.id_carpeta,
+        nombre
+      ]);
+
+    if (existentes.length) {
+
+      const error =
+        new Error(
+          "Ya existe una carpeta con ese nombre dentro del trabajador."
+        );
+
+      error.status = 409;
+
+      throw error;
+    }
+
+    const [resultado] =
+      await conexion.query(`
+        INSERT INTO carpetas_documentos (
+          id_servicio,
+          nombre_carpeta,
+          descripcion,
+          id_carpeta_padre,
+          id_drive
+        )
+        VALUES (?, ?, ?, ?, NULL)
+      `, [
+        trabajador.id_servicio,
+        nombre,
+        "Carpeta adicional del trabajador",
+        trabajador.id_carpeta
+      ]);
+
+    await conexion.commit();
+
+    return res.status(201).json({
+      success: true,
+
+      mensaje:
+        "Carpeta creada correctamente.",
+
+      carpeta: {
+        id_carpeta:
+          resultado.insertId,
+
+        nombre_carpeta:
+          nombre,
+
+        id_carpeta_padre:
+          trabajador.id_carpeta
+      }
+    });
+
+  } catch (error) {
+
+    if (conexion) {
+      try {
+        await conexion.rollback();
+      } catch {
+        conexion.destroy();
+        conexion = null;
+      }
+    }
+
+    console.error(
+      "Error creando carpeta de trabajador:",
+      error.code ||
+      error.status ||
+      "ERROR_INTERNO"
+    );
+
+    const estado =
+      [400, 403, 409].includes(
+        Number(error.status)
+      )
+        ? Number(error.status)
+        : 500;
+
+    return res.status(estado).json({
+      success: false,
+
+      mensaje:
+        estado === 500
+          ? "No se pudo crear la carpeta. Revisa el resultado antes de repetir."
+          : error.message
+    });
+
+  } finally {
+
+    if (conexion) {
+      conexion.release();
+    }
+
+  }
+};
+
+
+/*
+ * =====================================
+ * CREAR CARPETA EN ADMINISTRACIÓN / RRHH
+ * =====================================
+ *
+ * Permite crear solamente dentro de:
+ *
+ * Administración
+ * o
+ * Recursos Humanos
+ *
+ * Ambos son servicios independientes
+ * y obligatoriamente sin proyecto.
+ */
+exports.crearCarpetaAdministracionRRHH =
+async (req, res) => {
+
+  const idPadre =
+    Number(
+      req.params.idPadre
+    );
+
+  if (
+    !Number.isSafeInteger(
+      idPadre
+    ) ||
+    idPadre < 1 ||
+    idPadre > 2147483647
+  ) {
+
+    return res.status(400).json({
+      success: false,
+      mensaje:
+        "La carpeta seleccionada no es válida."
+    });
+
+  }
+
+  const entrada =
+    typeof req.body?.nombre_carpeta ===
+      "string"
+      ? req.body.nombre_carpeta
+      : "";
+
+  const nombre =
+    entrada
+      .trim()
+      .replace(/\s+/g, " ");
+
+  if (
+    !nombre ||
+    [...nombre].length > 100 ||
+    /[\\/\u0000-\u001f]/.test(
+      nombre
+    ) ||
+    nombre === "." ||
+    nombre === ".."
+  ) {
+
+    return res.status(400).json({
+      success: false,
+      mensaje:
+        "Escribe un nombre de carpeta de hasta 100 caracteres, sin barras ni saltos de línea."
+    });
+
+  }
+
+  if (
+    nombre.localeCompare(
+      "Otros",
+      "es",
+      {
+        sensitivity: "base"
+      }
+    ) === 0
+  ) {
+
+    return res.status(400).json({
+      success: false,
+      mensaje:
+        "Escribe un nombre específico para la carpeta en lugar de 'Otros'."
+    });
+
+  }
+
+  let conexion;
+
+  try {
+
+    conexion =
+      await pool.getConnection();
+
+    await conexion.beginTransaction();
+
+    /*
+     * El padre debe ser EXCLUSIVAMENTE:
+     *
+     * área 3 -> Administración
+     * área 1 -> Recursos Humanos
+     *
+     * y jamás puede pertenecer a un proyecto.
+     */
+    const [padres] =
+      await conexion.query(`
+        SELECT
+          c.id_carpeta,
+          c.id_servicio,
+          c.nombre_carpeta,
+
+          s.id_area,
+          s.id_proyecto
+
+        FROM carpetas_documentos c
+
+        INNER JOIN servicios_proyectos s
+          ON s.id_servicio =
+             c.id_servicio
+
+        INNER JOIN areas a
+          ON a.id_area =
+             s.id_area
+
+        WHERE c.id_carpeta = ?
+
+          AND c.id_carpeta_padre
+            IS NULL
+
+          AND s.id_proyecto
+            IS NULL
+
+          AND s.estado = 1
+          AND a.estado = 1
+
+          AND (
+            (
+              s.id_area = 3
+              AND c.nombre_carpeta =
+                'Administración'
+            )
+
+            OR
+
+            (
+              s.id_area = 1
+              AND c.nombre_carpeta =
+                'Recursos Humanos'
+            )
+          )
+
+        FOR UPDATE
+      `, [
+        idPadre
+      ]);
+
+    if (
+      padres.length !== 1
+    ) {
+
+      const error =
+        new Error(
+          "Solo se pueden crear carpetas directamente en Administración o Recursos Humanos."
+        );
+
+      error.status = 409;
+
+      throw error;
+
+    }
+
+    const padre =
+      padres[0];
+
+    const rol =
+      req.usuario?.nombre_rol;
+
+    const areaUsuario =
+      Number(
+        req.usuario?.id_area
+      );
+
+    /*
+     * Administrador:
+     * puede crear en ambas áreas.
+     *
+     * Supervisor:
+     * únicamente en su propia área.
+     */
+    const autorizado =
+      rol === "Administrador" ||
+      (
+        rol === "Supervisor" &&
+        areaUsuario ===
+          Number(
+            padre.id_area
+          )
+      );
+
+    if (!autorizado) {
+
+      const error =
+        new Error(
+          "No tienes permiso para crear carpetas en esta área."
+        );
+
+      error.status = 403;
+
+      throw error;
+
+    }
+
+    /*
+     * Evitar nombres repetidos
+     * dentro de la misma carpeta.
+     */
+    const [existentes] =
+      await conexion.query(`
+        SELECT
+          id_carpeta
+        FROM carpetas_documentos
+
+        WHERE id_servicio = ?
+          AND id_carpeta_padre = ?
+
+          AND LOWER(
+                TRIM(
+                  nombre_carpeta
+                )
+              ) =
+              LOWER(?)
+
+        FOR UPDATE
+      `, [
+        padre.id_servicio,
+        padre.id_carpeta,
+        nombre
+      ]);
+
+    if (
+      existentes.length
+    ) {
+
+      const error =
+        new Error(
+          "Ya existe una carpeta con ese nombre."
+        );
+
+      error.status = 409;
+
+      throw error;
+
+    }
+
+    const [resultado] =
+      await conexion.query(`
+        INSERT INTO carpetas_documentos (
+          id_servicio,
+          nombre_carpeta,
+          descripcion,
+          id_carpeta_padre,
+          id_drive
+        )
+        VALUES (?, ?, ?, ?, NULL)
+      `, [
+        padre.id_servicio,
+        nombre,
+        "Carpeta creada desde el archivo documental",
+        padre.id_carpeta
+      ]);
+
+    await conexion.commit();
+
+    return res.status(201).json({
+      success: true,
+
+      mensaje:
+        "Carpeta creada correctamente.",
+
+      carpeta: {
+        id_carpeta:
+          resultado.insertId,
+
+        nombre_carpeta:
+          nombre,
+
+        id_carpeta_padre:
+          padre.id_carpeta,
+
+        id_area:
+          padre.id_area
+      }
+    });
+
+  } catch (error) {
+
+    if (conexion) {
+
+      try {
+
+        await conexion.rollback();
+
+      } catch {
+
+        conexion.destroy();
+        conexion = null;
+
+      }
+
+    }
+
+    console.error(
+      "Error creando carpeta de Administración/RRHH:",
+      error.code ||
+      error.status ||
+      "ERROR_INTERNO"
+    );
+
+    const estado =
+      [400, 403, 409].includes(
+        Number(
+          error.status
+        )
+      )
+        ? Number(
+            error.status
+          )
+        : 500;
+
+    return res.status(estado).json({
+      success: false,
+
+      mensaje:
+        estado === 500
+          ? "No se pudo crear la carpeta. Revisa el resultado antes de repetir."
+          : error.message
+    });
+
+  } finally {
+
+    if (conexion) {
+      conexion.release();
+    }
+
+  }
+};
+
 // Búsqueda general para las cuentas activas autorizadas por la ruta.
 exports.buscarGeneral = async (req, res) => {
   const termino =
