@@ -13,20 +13,12 @@
           url: "/admin.html"
         },
         {
-          nombre: "Subir PDF",
-          url: "/subir_documento.html"
-        },
-        {
           nombre: "Archivo documental",
           url: "/documentos.html"
         },
         {
           nombre: "Búsqueda",
           url: "/buscar_documentos.html"
-        },
-        {
-          nombre: "Crear proyecto",
-          url: "/proyectos.html"
         },
         {
           nombre: "Asignar proyectos",
@@ -45,10 +37,6 @@
           url: "/supervisor.html"
         },
         {
-          nombre: "Subir PDF",
-          url: "/subir_documento.html"
-        },
-        {
           nombre: "Archivo documental",
           url: "/documentos.html"
         },
@@ -56,10 +44,6 @@
           nombre: "Búsqueda",
           url: "/buscar_documentos.html"
         },
-        {
-          nombre: "Crear proyecto",
-          url: "/proyectos.html"
-        }
       ]
     },
 
@@ -71,10 +55,6 @@
         {
           nombre: "Inicio",
           url: "/usuario.html"
-        },
-        {
-          nombre: "Subir PDF",
-          url: "/subir_documento.html"
         },
         {
           nombre: "Archivo documental",
