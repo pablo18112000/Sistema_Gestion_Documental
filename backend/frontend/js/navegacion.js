@@ -5,166 +5,90 @@
   const configuracion = {
 
     Administrador: {
-
-      inicio:
-        "/admin.html",
+      inicio: "/admin.html",
 
       opciones: [
-
         {
-          nombre:
-            "Usuarios",
-
-          url:
-            "/admin.html"
+          nombre: "Usuarios",
+          url: "/admin.html"
         },
-
         {
-          nombre:
-            "Subir PDF",
-
-          url:
-            "/subir_documento.html"
+          nombre: "Subir PDF",
+          url: "/subir_documento.html"
         },
-
         {
-          nombre:
-            "Archivo documental",
-
-          url:
-            "/documentos.html"
+          nombre: "Archivo documental",
+          url: "/documentos.html"
         },
-
         {
-          nombre:
-            "Búsqueda",
-
-          url:
-            "/buscar_documentos.html"
+          nombre: "Búsqueda",
+          url: "/buscar_documentos.html"
         },
-
         {
-          nombre:
-            "Proyectos",
-
-          url:
-            "/proyectos.html"
+          nombre: "Proyectos",
+          url: "/proyectos.html"
         },
-
         {
-          nombre:
-            "Asignar proyectos",
-
-          url:
-            "/asignaciones.html"
+          nombre: "Asignar proyectos",
+          url: "/asignaciones.html"
         }
-
       ]
-
     },
 
 
     Supervisor: {
-
-      inicio:
-        "/supervisor.html",
+      inicio: "/supervisor.html",
 
       opciones: [
-
         {
-          nombre:
-            "Revisiones",
-
-          url:
-            "/supervisor.html"
+          nombre: "Revisiones",
+          url: "/supervisor.html"
         },
-
         {
-          nombre:
-            "Subir PDF",
-
-          url:
-            "/subir_documento.html"
+          nombre: "Subir PDF",
+          url: "/subir_documento.html"
         },
-
         {
-          nombre:
-            "Archivo documental",
-
-          url:
-            "/documentos.html"
+          nombre: "Archivo documental",
+          url: "/documentos.html"
         },
-
         {
-          nombre:
-            "Búsqueda",
-
-          url:
-            "/buscar_documentos.html"
+          nombre: "Búsqueda",
+          url: "/buscar_documentos.html"
         },
-
         {
-          nombre:
-            "Proyectos",
-
-          url:
-            "/proyectos.html"
+          nombre: "Proyectos",
+          url: "/proyectos.html"
         }
-
       ]
-
     },
 
 
     Usuario: {
-
-      inicio:
-        "/usuario.html",
+      inicio: "/usuario.html",
 
       opciones: [
-
         {
-          nombre:
-            "Inicio",
-
-          url:
-            "/usuario.html"
+          nombre: "Inicio",
+          url: "/usuario.html"
         },
-
         {
-          nombre:
-            "Subir PDF",
-
-          url:
-            "/subir_documento.html"
+          nombre: "Subir PDF",
+          url: "/subir_documento.html"
         },
-
         {
-          nombre:
-            "Archivo documental",
-
-          url:
-            "/documentos.html"
+          nombre: "Archivo documental",
+          url: "/documentos.html"
         },
-
         {
-          nombre:
-            "Búsqueda",
-
-          url:
-            "/buscar_documentos.html"
+          nombre: "Búsqueda",
+          url: "/buscar_documentos.html"
         },
-
         {
-          nombre:
-            "Proyectos",
-
-          url:
-            "/proyectos.html"
+          nombre: "Proyectos",
+          url: "/proyectos.html"
         }
-
       ]
-
     }
 
   };
@@ -173,10 +97,11 @@
   function rutaActual() {
 
     let ruta =
-      window.location.pathname ||
-      "/";
+      window.location.pathname || "/";
+
 
     if (
+      ruta.length > 1 &&
       ruta.endsWith("/")
     ) {
 
@@ -185,11 +110,52 @@
           0,
           -1
         );
-
     }
 
-    return ruta || "/";
 
+    return ruta || "/";
+  }
+
+
+  function usuarioGuardado() {
+
+    try {
+
+      const texto =
+        localStorage.getItem(
+          "usuario"
+        );
+
+
+      if (!texto) {
+        return null;
+      }
+
+
+      const usuario =
+        JSON.parse(
+          texto
+        );
+
+
+      if (
+        !usuario ||
+        !configuracion[
+          usuario.nombre_rol
+        ]
+      ) {
+
+        return null;
+      }
+
+
+      return usuario;
+
+
+    } catch {
+
+      return null;
+    }
   }
 
 
@@ -203,8 +169,10 @@
         "a"
       );
 
+
     enlace.href =
       opcion.url;
+
 
     enlace.textContent =
       opcion.nombre;
@@ -219,16 +187,15 @@
         "activo"
       );
 
+
       enlace.setAttribute(
         "aria-current",
         "page"
       );
-
     }
 
 
     return enlace;
-
   }
 
 
@@ -247,7 +214,6 @@
 
       boton.textContent =
         "Cerrando...";
-
     }
 
 
@@ -257,32 +223,15 @@
         await fetch(
           "/usuarios/logout",
           {
-            method:
-              "POST",
-
-            credentials:
-              "same-origin",
-
-            cache:
-              "no-store"
+            method: "POST",
+            credentials: "same-origin",
+            cache: "no-store"
           }
         );
 
 
-      let datos = null;
-
-
-      try {
-
-        datos =
-          await respuesta.json();
-
-      } catch {
-
-        datos =
-          null;
-
-      }
+      const datos =
+        await respuesta.json();
 
 
       if (
@@ -294,7 +243,6 @@
         throw new Error(
           "No se pudo cerrar la sesión."
         );
-
       }
 
 
@@ -317,7 +265,6 @@
 
         boton.textContent =
           "Cerrar sesión";
-
       }
 
 
@@ -325,91 +272,21 @@
         error.message ||
         "No se pudo cerrar la sesión."
       );
-
     }
-
   }
 
 
-  async function iniciar() {
-
-    /*
-      Si esta barra no puede comprobar la sesión,
-      no toca la navegación antigua.
-    */
-
-    let respuesta;
-
-
-    try {
-
-      respuesta =
-        await fetch(
-          "/usuarios/sesion",
-          {
-            credentials:
-              "same-origin",
-
-            cache:
-              "no-store"
-          }
-        );
-
-
-    } catch {
-
-      return;
-
-    }
-
+  function construirBarra(
+    usuario
+  ) {
 
     if (
-      respuesta.status ===
-      401
+      !usuario ||
+      !usuario.nombre_rol
     ) {
 
       return;
-
     }
-
-
-    if (
-      !respuesta.ok
-    ) {
-
-      return;
-
-    }
-
-
-    let datos;
-
-
-    try {
-
-      datos =
-        await respuesta.json();
-
-    } catch {
-
-      return;
-
-    }
-
-
-    if (
-      !datos ||
-      datos.success !== true ||
-      !datos.usuario
-    ) {
-
-      return;
-
-    }
-
-
-    const usuario =
-      datos.usuario;
 
 
     const rol =
@@ -423,15 +300,20 @@
 
 
     if (!perfil) {
-
       return;
-
     }
 
 
-    /*
-      Crear barra global
-    */
+    const existente =
+      document.getElementById(
+        "coemsa-nav-global"
+      );
+
+
+    if (existente) {
+      existente.remove();
+    }
+
 
     const barra =
       document.createElement(
@@ -458,10 +340,6 @@
     contenido.className =
       "coemsa-nav-contenido";
 
-
-    /*
-      Marca
-    */
 
     const marca =
       document.createElement(
@@ -507,10 +385,6 @@
     );
 
 
-    /*
-      Menú
-    */
-
     const menu =
       document.createElement(
         "div"
@@ -536,13 +410,8 @@
           actual
         )
       );
-
     }
 
-
-    /*
-      Cuenta
-    */
 
     const cuenta =
       document.createElement(
@@ -624,8 +493,99 @@
 
 
     /*
-      Insertar una sola vez
-    */
+     * El script ahora está justo después de <body>.
+     * Por eso la barra aparece antes que el resto
+     * de la página.
+     */
+
+    document.body.prepend(
+      barra
+    );
+
+
+    document.body.classList.add(
+      "coemsa-nav-activa"
+    );
+  }
+
+
+  /*
+   * PRIMERA CARGA:
+   * usar inmediatamente el usuario que ya estaba
+   * validado en la página anterior.
+   */
+
+  const guardado =
+    usuarioGuardado();
+
+
+  if (guardado) {
+
+    construirBarra(
+      guardado
+    );
+  }
+
+
+  /*
+   * SEGUNDA COMPROBACIÓN:
+   * al terminar de cargar la página validamos
+   * contra el servidor.
+   */
+
+  async function validar() {
+
+    if (
+      typeof verificarSesion !==
+      "function"
+    ) {
+
+      return;
+    }
+
+
+    const usuario =
+      await verificarSesion();
+
+
+    if (!usuario) {
+      return;
+    }
+
+
+    const actualGuardado =
+      usuarioGuardado();
+
+
+    /*
+     * Solo reconstruir si la cuenta cambió.
+     * Así evitamos un segundo parpadeo.
+     */
+
+    if (
+      !actualGuardado ||
+      String(
+        actualGuardado.id_usuario
+      ) !==
+        String(
+          usuario.id_usuario
+        ) ||
+      actualGuardado.nombre_rol !==
+        usuario.nombre_rol
+    ) {
+
+      construirBarra(
+        usuario
+      );
+
+      return;
+    }
+
+
+    /*
+     * Si es la misma cuenta pero por algún motivo
+     * no existe la barra, la volvemos a crear.
+     */
 
     if (
       !document.getElementById(
@@ -633,22 +593,10 @@
       )
     ) {
 
-      document.body.prepend(
-        barra
+      construirBarra(
+        usuario
       );
-
     }
-
-
-    /*
-      Solo ahora ocultamos los menús antiguos.
-      Si algo falla antes, los accesos viejos siguen disponibles.
-    */
-
-    document.body.classList.add(
-      "coemsa-nav-activa"
-    );
-
   }
 
 
@@ -659,17 +607,15 @@
 
     document.addEventListener(
       "DOMContentLoaded",
-      iniciar,
+      validar,
       {
-        once:
-          true
+        once: true
       }
     );
 
   } else {
 
-    iniciar();
-
+    validar();
   }
 
 })();

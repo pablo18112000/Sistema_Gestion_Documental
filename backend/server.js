@@ -44,6 +44,13 @@ app.use(express.urlencoded({
   limit: "1mb"
 }));
 
+// Servir el frontend antes de abrir una sesión MySQL.
+// Los datos privados continúan protegidos en las rutas API.
+app.use(express.static(carpetaFrontend, {
+  index: false,
+  dotfiles: "deny"
+}));
+
 app.use(sessionMiddleware);
 
 // =====================================
@@ -116,10 +123,7 @@ app.get("/", (req, res) => {
   );
 });
 
-app.use(express.static(carpetaFrontend, {
-  index: false,
-  dotfiles: "deny"
-}));
+
 
 // =====================================
 // RUTA NO ENCONTRADA

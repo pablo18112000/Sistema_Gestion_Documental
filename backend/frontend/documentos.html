@@ -244,10 +244,9 @@
     }
   </style>
   <link rel="stylesheet" href="/css/navegacion.css">
-  <script src="/js/navegacion.js" defer></script>
 </head>
 
-<body>
+<body>\n  <script src="/js/navegacion.js"></script>
 
   <header>
 
@@ -413,6 +412,10 @@
     let documentosActuales = [];
     let pasos = [];
     let cargando = false;
+
+    // Los documentos se cargan solo al abrir una ubicación.
+    // El caché dura mientras permanezcas en esta página.
+    const cacheDocumentos = new Map();
 
 
     function normalizar(valor) {
@@ -856,34 +859,274 @@
     }
 
 
-    function seleccionarDocumentos(
-      ids
-    ) {
+    function claveVistaActual() {
+      return pasos
+        .map((paso) =>
+          `${paso.tipo}:${paso.id}`
+        )
+        .join("|");
+    }
 
-      const permitidas =
-        new Set(
-          ids.map(
-            String
-          )
+
+    function claveCarpetas(ids) {
+      return [
+        ...new Set(
+          ids
+            .map(Number)
+            .filter(
+              (id) =>
+                Number.isSafeInteger(id) &&
+                id > 0
+            )
+        )
+      ]
+        .sort((a, b) => a - b);
+    }
+
+
+    async function cargarDocumentosDeCarpetas(ids) {
+
+      const carpetasSolicitadas =
+        claveCarpetas(ids);
+
+
+      if (
+        !carpetasSolicitadas.length
+      ) {
+
+        return [];
+
+      }
+
+
+      const clave =
+        carpetasSolicitadas.join(",");
+
+
+      /*
+       * Si ya abrimos esta ubicación,
+       * no volvemos a consultar MySQL.
+       */
+
+      if (
+        cacheDocumentos.has(clave)
+      ) {
+
+        return cacheDocumentos.get(
+          clave
         );
+
+      }
+
+
+      const documentosEncontrados =
+        [];
+
+
+      /*
+       * Se envían como máximo 100 carpetas
+       * por solicitud para evitar URLs enormes.
+       */
+
+      for (
+        let inicio = 0;
+        inicio < carpetasSolicitadas.length;
+        inicio += 100
+      ) {
+
+        const grupo =
+          carpetasSolicitadas.slice(
+            inicio,
+            inicio + 100
+          );
+
+
+        let pagina = 1;
+
+
+        while (
+          pagina <= 100
+        ) {
+
+          const datos =
+            await consultar(
+              "/documentos?pagina=" +
+              pagina +
+              "&carpetas=" +
+              encodeURIComponent(
+                grupo.join(",")
+              )
+            );
+
+
+          if (
+            Array.isArray(
+              datos.documentos
+            )
+          ) {
+
+            documentosEncontrados.push(
+              ...datos.documentos
+            );
+
+          }
+
+
+          if (
+            !datos.hay_mas
+          ) {
+
+            break;
+
+          }
+
+
+          pagina++;
+
+        }
+
+
+        if (
+          pagina > 100
+        ) {
+
+          throw new Error(
+            "Esta ubicación tiene más de 10000 documentos. Se necesita una paginación específica para esta carpeta."
+          );
+
+        }
+
+      }
+
+
+      /*
+       * Dejamos los documentos más recientes primero.
+       */
+
+      documentosEncontrados.sort(
+        (a, b) => {
+
+          const fechaA =
+            new Date(
+              a.fecha_subida || 0
+            ).getTime();
+
+
+          const fechaB =
+            new Date(
+              b.fecha_subida || 0
+            ).getTime();
+
+
+          if (
+            fechaB !== fechaA
+          ) {
+
+            return fechaB - fechaA;
+
+          }
+
+
+          return (
+            Number(
+              b.id_documento || 0
+            ) -
+            Number(
+              a.id_documento || 0
+            )
+          );
+
+        }
+      );
+
+
+      cacheDocumentos.set(
+        clave,
+        documentosEncontrados
+      );
+
+
+      return documentosEncontrados;
+
+    }
+
+
+    async function seleccionarDocumentos(ids) {
+
+      const vistaEsperada =
+        claveVistaActual();
 
 
       documentosActuales =
-        documentos.filter(
-          (documento) =>
-            permitidas.has(
-              String(
-                documento.id_carpeta
-              )
-            )
-        );
+        [];
 
 
       $("documentos").hidden =
         false;
 
 
-      mostrarDocumentos();
+      $("filas")
+        .replaceChildren();
+
+
+      $("contador")
+        .textContent =
+        "Cargando documentos de esta ubicación...";
+
+
+      try {
+
+        const encontrados =
+          await cargarDocumentosDeCarpetas(
+            ids
+          );
+
+
+        /*
+         * Si mientras cargaba el usuario volvió Atrás
+         * o abrió otra carpeta, descartamos el resultado viejo.
+         */
+
+        if (
+          claveVistaActual() !==
+          vistaEsperada
+        ) {
+
+          return;
+
+        }
+
+
+        documentosActuales =
+          encontrados;
+
+
+        mostrarDocumentos();
+
+
+      } catch (error) {
+
+        if (
+          claveVistaActual() !==
+          vistaEsperada
+        ) {
+
+          return;
+
+        }
+
+
+        $("contador")
+          .textContent =
+          "";
+
+
+        $("mensaje")
+          .textContent =
+          error.message ||
+          "No se pudieron cargar los documentos de esta ubicación.";
+
+      }
 
     }
 
@@ -1739,7 +1982,7 @@
 
       $("mensaje")
         .textContent =
-        "Cargando carpetas y documentos...";
+        "Cargando organización...";
 
 
       $("carpetas")
@@ -1755,83 +1998,33 @@
         .replaceChildren();
 
 
-      // Mientras carga estamos en la raíz.
-      $("atras").style.display =
+      $("atras")
+        .style.display =
         "none";
 
 
       try {
 
+        /*
+         * IMPORTANTE:
+         *
+         * Ya no descargamos todos los documentos
+         * cuando se abre Archivo documental.
+         *
+         * Primero cargamos únicamente:
+         * - secciones
+         * - clientes
+         * - unidades
+         * - carpetas
+         *
+         * Los PDF se consultan después,
+         * solamente al abrir la ubicación necesaria.
+         */
+
         const organizacion =
           await consultar(
             "/documentos/organizacion"
           );
-
-
-        const archivos =
-          [];
-
-
-        let completa =
-          false;
-
-
-        for (
-          let pagina = 1;
-          pagina <= 100;
-          pagina++
-        ) {
-
-          const datos =
-            await consultar(
-              "/documentos?pagina=" +
-              pagina
-            );
-
-
-          if (
-            Array.isArray(
-              datos.documentos
-            )
-          ) {
-
-            archivos.push(
-              ...datos.documentos
-            );
-
-          }
-
-
-          if (
-            !datos.hay_mas
-          ) {
-
-            completa =
-              true;
-
-            break;
-
-          }
-
-
-          $("mensaje")
-            .textContent =
-            "Cargando documentos: " +
-            archivos.length +
-            "...";
-
-        }
-
-
-        if (
-          !completa
-        ) {
-
-          throw new Error(
-            "Hay más de 10000 documentos. Debe habilitarse la consulta por carpeta antes de mostrar este explorador."
-          );
-
-        }
 
 
         secciones =
@@ -1867,7 +2060,7 @@
 
 
         documentos =
-          archivos;
+          [];
 
 
         documentosActuales =
@@ -1876,6 +2069,15 @@
 
         pasos =
           [];
+
+
+        /*
+         * Si el usuario presiona Actualizar,
+         * también actualizamos los documentos
+         * previamente consultados.
+         */
+
+        cacheDocumentos.clear();
 
 
         $("buscar").value =
@@ -1887,7 +2089,7 @@
 
         $("mensaje")
           .textContent =
-          "Organización cargada. Esta vista no mueve archivos en Drive.";
+          "Organización cargada. Los documentos se cargan al abrir una ubicación.";
 
 
       } catch (error) {

@@ -114,20 +114,70 @@ exports.listarDocumentos = async (req, res) => {
 
     const filtro = filtroLectura(req.usuario);
 
+    const carpetasTexto =
+      typeof req.query.carpetas === "string"
+        ? req.query.carpetas.trim()
+        : "";
+
+    let carpetas = [];
+
+    if (carpetasTexto) {
+      const partes = carpetasTexto
+        .split(",")
+        .map((valor) => valor.trim())
+        .filter(Boolean);
+
+      if (
+        partes.length === 0 ||
+        partes.length > 100 ||
+        partes.some((valor) => !idValido(valor))
+      ) {
+        throw fallo(
+          400,
+          "La selección de carpetas no es válida."
+        );
+      }
+
+      carpetas = [
+        ...new Set(partes.map((valor) => Number(valor)))
+      ];
+    }
+
+    const condiciones = [`(${filtro.sql})`];
+    const parametros = [...filtro.parametros];
+
+    if (carpetas.length) {
+      condiciones.push(
+        `d.id_carpeta IN (${carpetas.map(() => "?").join(",")})`
+      );
+
+      parametros.push(...carpetas);
+    }
+
     const [filas] = await pool.query(
       `
         ${consultaDocumentos}
-        WHERE ${filtro.sql}
+        WHERE ${condiciones.join(" AND ")}
         ORDER BY d.fecha_subida DESC, d.id_documento DESC
         LIMIT ? OFFSET ?
       `,
-      [...filtro.parametros, 101, (pagina - 1) * 100]
+      [
+        ...parametros,
+        101,
+        (pagina - 1) * 100
+      ]
     );
 
-    const documentos = filas.slice(0, 100).map((fila) => {
-      const { ruta_nube, ...datos } = fila;
-      return datos;
-    });
+    const documentos = filas
+      .slice(0, 100)
+      .map((fila) => {
+        const {
+          ruta_nube,
+          ...datos
+        } = fila;
+
+        return datos;
+      });
 
     res.json({
       success: true,
@@ -136,6 +186,7 @@ exports.listarDocumentos = async (req, res) => {
       por_pagina: 100,
       hay_mas: filas.length > 100
     });
+
   } catch (error) {
     responderError(res, error);
   }
