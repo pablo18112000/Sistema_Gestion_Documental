@@ -71,14 +71,33 @@ function filtroRevision(usuario) {
   }
 
   // Servicios y Proyectos.
-  // Cualquier documento asociado a proyecto pertenece
-  // visualmente a esta sección.
+  // Un Supervisor solamente puede revisar
+  // documentos de proyectos que él mismo creó.
+  // Los documentos del área 2 sin proyecto
+  // conservan la revisión por área.
   if (area === 2) {
+    const idUsuario =
+      Number(usuario.id_usuario);
+
+    if (
+      !Number.isSafeInteger(idUsuario) ||
+      idUsuario <= 0
+    ) {
+      return { sql: "1 = 0" };
+    }
+
     return {
       sql:
         "(" +
+        "(" +
         proyecto +
-        " IS NOT NULL OR (" +
+        " IS NOT NULL AND EXISTS (" +
+        "SELECT 1 FROM proyectos pr " +
+        "WHERE pr.id_proyecto = " +
+        proyecto +
+        " AND pr.id_usuario_creador = " +
+        idUsuario +
+        ")) OR (" +
         proyecto +
         " IS NULL AND " +
         areaDocumento +

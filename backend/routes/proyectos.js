@@ -359,10 +359,15 @@ router.post(
       const [proyecto] = await conexion.query(`
         INSERT INTO proyectos (
           nombre_proyecto,
-          descripcion
+          descripcion,
+          id_usuario_creador
         )
-        VALUES (?, ?)
-      `, [nombre, descripcion || null]);
+        VALUES (?, ?, ?)
+      `, [
+        nombre,
+        descripcion || null,
+        idUsuario
+      ]);
 
       const idProyecto = proyecto.insertId;
 
