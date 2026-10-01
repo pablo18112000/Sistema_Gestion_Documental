@@ -265,24 +265,53 @@ exports.consultar = async (req, res) => {
     // Así aparecen aunque todavía no tengan proyectos o carpetas.
     const [clientes] = await pool.query(`
       SELECT
-        id_cliente,
-        nombre_cliente,
-        estado
-      FROM clientes
-      WHERE estado = 1
-      ORDER BY id_cliente
+        cl.id_cliente,
+        cl.nombre_cliente,
+        cl.estado,
+        uds.id_carpeta AS id_carpeta_documental
+      FROM clientes cl
+      LEFT JOIN ubicaciones_documentales_servicios uds
+        ON uds.tipo_ubicacion = 'cliente'
+        AND uds.id_referencia = cl.id_cliente
+      WHERE cl.estado = 1
+      ORDER BY cl.id_cliente
     `);
 
     const [unidades] = await pool.query(`
       SELECT
-        id_unidad,
-        id_cliente,
-        nombre_unidad,
-        estado
-      FROM unidades_clientes
-      WHERE estado = 1
-      ORDER BY id_cliente, id_unidad
+        uc.id_unidad,
+        uc.id_cliente,
+        uc.nombre_unidad,
+        uc.estado,
+        uds.id_carpeta AS id_carpeta_documental
+      FROM unidades_clientes uc
+      LEFT JOIN ubicaciones_documentales_servicios uds
+        ON uds.tipo_ubicacion = 'unidad'
+        AND uds.id_referencia = uc.id_unidad
+      WHERE uc.estado = 1
+      ORDER BY uc.id_cliente, uc.id_unidad
     `);
+
+    const [raicesServicios] = await pool.query(`
+      SELECT
+        uds.id_carpeta,
+        c.id_servicio
+      FROM ubicaciones_documentales_servicios uds
+      INNER JOIN carpetas_documentos c
+        ON c.id_carpeta = uds.id_carpeta
+      WHERE uds.tipo_ubicacion = 'servicios'
+        AND uds.id_referencia = 0
+      LIMIT 2
+    `);
+
+    if (raicesServicios.length > 1) {
+      throw new Error(
+        "Existe más de una raíz documental para Servicios y Proyectos."
+      );
+    }
+
+    const serviciosDocumentales =
+      raicesServicios[0] || null;
 
     const parametros = [
       esAdministrador ? 1 : 0,
@@ -351,6 +380,8 @@ exports.consultar = async (req, res) => {
         uc.nombre_unidad,
         cl.id_cliente,
         cl.nombre_cliente,
+        uds.tipo_ubicacion,
+        uds.id_referencia AS id_referencia_ubicacion,
         CASE
           WHEN s.estado = 1
             AND a.estado = 1
@@ -386,6 +417,8 @@ exports.consultar = async (req, res) => {
         ON uc.id_unidad = pu.id_unidad
       LEFT JOIN clientes cl
         ON cl.id_cliente = uc.id_cliente
+      LEFT JOIN ubicaciones_documentales_servicios uds
+        ON uds.id_carpeta = c.id_carpeta
       ${filtro}
       ORDER BY
         cl.nombre_cliente,
@@ -430,6 +463,12 @@ exports.consultar = async (req, res) => {
 
         id_unidad: fila.id_unidad,
         nombre_unidad: fila.nombre_unidad,
+
+        tipo_ubicacion:
+          fila.tipo_ubicacion,
+
+        id_referencia_ubicacion:
+          fila.id_referencia_ubicacion,
 
         seccion,
 
@@ -493,6 +532,10 @@ exports.consultar = async (req, res) => {
         mostrarClientes
           ? unidades
           : [],
+      servicios_documentales:
+        mostrarClientes
+          ? serviciosDocumentales
+          : null,
       carpetas
     });
 

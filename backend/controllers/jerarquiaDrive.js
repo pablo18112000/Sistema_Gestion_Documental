@@ -94,9 +94,353 @@ async function obtenerNivel(padre, nombre, clave) {
   return creada.data.id;
 }
 
+async function prepararUbicacionDocumentalServicios(
+  conexion,
+  carpeta,
+  raiz
+) {
+  const niveles =
+    Array.isArray(carpeta.cadena)
+      ? carpeta.cadena
+      : [];
+
+  if (!niveles.length) {
+    return null;
+  }
+
+  /*
+   * Solo la nueva estructura real de
+   * Servicios y Proyectos utiliza esta tabla.
+   * Las carpetas antiguas sin proyecto siguen
+   * conservando su comportamiento anterior.
+   */
+  const [raices] =
+    await conexion.execute(`
+      SELECT
+        uds.id_carpeta,
+        c.id_servicio
+      FROM ubicaciones_documentales_servicios uds
+      INNER JOIN carpetas_documentos c
+        ON c.id_carpeta = uds.id_carpeta
+      WHERE uds.tipo_ubicacion = 'servicios'
+        AND uds.id_referencia = 0
+    `);
+
+  if (!raices.length) {
+    return null;
+  }
+
+  if (raices.length !== 1) {
+    throw fallo(
+      "No existe una única raíz documental de Servicios y Proyectos."
+    );
+  }
+
+  const raizDocumental =
+    raices[0];
+
+  if (
+    Number(raizDocumental.id_servicio) !==
+    Number(carpeta.id_servicio)
+  ) {
+    return null;
+  }
+
+  if (
+    Number(niveles[0].id_carpeta) !==
+    Number(raizDocumental.id_carpeta)
+  ) {
+    throw fallo(
+      "La carpeta no desciende de la raíz documental de Servicios y Proyectos."
+    );
+  }
+
+  const ids =
+    niveles.map(
+      (nivel) =>
+        Number(nivel.id_carpeta)
+    );
+
+  const marcadores =
+    ids.map(() => "?").join(",");
+
+  const [ubicaciones] =
+    await conexion.execute(`
+      SELECT
+        tipo_ubicacion,
+        id_referencia,
+        id_carpeta
+      FROM ubicaciones_documentales_servicios
+      WHERE id_carpeta IN (${marcadores})
+    `, ids);
+
+  if (!ubicaciones.length) {
+    throw fallo(
+      "No se pudo identificar la ubicación documental de Servicios y Proyectos."
+    );
+  }
+
+  const posicion =
+    new Map(
+      ids.map(
+        (id, indice) => [
+          String(id),
+          indice
+        ]
+      )
+    );
+
+  ubicaciones.sort(
+    (a, b) =>
+      Number(
+        posicion.get(
+          String(a.id_carpeta)
+        )
+      ) -
+      Number(
+        posicion.get(
+          String(b.id_carpeta)
+        )
+      )
+  );
+
+  const ubicacion =
+    ubicaciones[
+      ubicaciones.length - 1
+    ];
+
+  const indiceUbicacion =
+    posicion.get(
+      String(
+        ubicacion.id_carpeta
+      )
+    );
+
+  if (
+    !Number.isSafeInteger(
+      indiceUbicacion
+    )
+  ) {
+    throw fallo(
+      "La ubicación documental no coincide con la jerarquía de carpetas."
+    );
+  }
+
+  let datosCliente = null;
+  let datosUnidad = null;
+
+  if (
+    ubicacion.tipo_ubicacion ===
+    "cliente"
+  ) {
+    const [clientes] =
+      await conexion.execute(`
+        SELECT
+          id_cliente,
+          nombre_cliente,
+          estado
+        FROM clientes
+        WHERE id_cliente = ?
+      `, [
+        ubicacion.id_referencia
+      ]);
+
+    if (
+      clientes.length !== 1 ||
+      Number(
+        clientes[0].estado
+      ) !== 1
+    ) {
+      throw fallo(
+        "El cliente de esta ubicación ya no está disponible."
+      );
+    }
+
+    datosCliente =
+      clientes[0];
+
+  } else if (
+    ubicacion.tipo_ubicacion ===
+    "unidad"
+  ) {
+    const [unidades] =
+      await conexion.execute(`
+        SELECT
+          u.id_unidad,
+          u.nombre_unidad,
+          u.estado AS unidad_activa,
+          c.id_cliente,
+          c.nombre_cliente,
+          c.estado AS cliente_activo
+        FROM unidades_clientes u
+        INNER JOIN clientes c
+          ON c.id_cliente = u.id_cliente
+        WHERE u.id_unidad = ?
+      `, [
+        ubicacion.id_referencia
+      ]);
+
+    if (
+      unidades.length !== 1 ||
+      Number(
+        unidades[0].unidad_activa
+      ) !== 1 ||
+      Number(
+        unidades[0].cliente_activo
+      ) !== 1
+    ) {
+      throw fallo(
+        "El cliente o la unidad de esta ubicación ya no está disponible."
+      );
+    }
+
+    datosUnidad =
+      unidades[0];
+
+    datosCliente = {
+      id_cliente:
+        datosUnidad.id_cliente,
+      nombre_cliente:
+        datosUnidad.nombre_cliente,
+      estado:
+        datosUnidad.cliente_activo
+    };
+
+    const [mapeoCliente] =
+      await conexion.execute(`
+        SELECT
+          id_carpeta
+        FROM ubicaciones_documentales_servicios
+        WHERE tipo_ubicacion = 'cliente'
+          AND id_referencia = ?
+      `, [
+        datosUnidad.id_cliente
+      ]);
+
+    if (
+      mapeoCliente.length !== 1 ||
+      !posicion.has(
+        String(
+          mapeoCliente[0].id_carpeta
+        )
+      )
+    ) {
+      throw fallo(
+        "La unidad no se encuentra dentro de su cliente documental."
+      );
+    }
+
+  } else if (
+    ubicacion.tipo_ubicacion !==
+    "servicios"
+  ) {
+    throw fallo(
+      "El tipo de ubicación documental no es válido."
+    );
+  }
+
+  const claveBloqueo =
+    "coemsa-drive-" +
+    crypto
+      .createHash("sha256")
+      .update(raiz)
+      .digest("hex")
+      .slice(0, 32);
+
+  const [bloqueo] =
+    await conexion.execute(
+      "SELECT GET_LOCK(?, 10) AS adquirido",
+      [claveBloqueo]
+    );
+
+  if (
+    Number(
+      bloqueo[0].adquirido
+    ) !== 1
+  ) {
+    const error =
+      new Error(
+        "La organización de Drive está ocupada. Intenta en unos momentos."
+      );
+
+    error.status = 503;
+
+    throw error;
+  }
+
+  try {
+    let padre =
+      await obtenerNivel(
+        raiz,
+        "Servicios y Proyectos",
+        "servicios"
+      );
+
+    if (datosCliente) {
+      padre =
+        await obtenerNivel(
+          padre,
+          datosCliente.nombre_cliente,
+          "cliente-" +
+            datosCliente.id_cliente
+        );
+    }
+
+    if (datosUnidad) {
+      padre =
+        await obtenerNivel(
+          padre,
+          datosUnidad.nombre_unidad,
+          "unidad-" +
+            datosUnidad.id_unidad
+        );
+    }
+
+    /*
+     * Estos niveles visuales ya corresponden
+     * a las carpetas organizativas de Drive.
+     * subcarpetasDrive solo debe crear desde
+     * el primer hijo personalizado.
+     */
+    carpeta.omitir_niveles_drive =
+      indiceUbicacion + 1;
+
+    return padre;
+
+  } finally {
+    const [liberacion] =
+      await conexion.execute(
+        "SELECT RELEASE_LOCK(?) AS liberado",
+        [claveBloqueo]
+      );
+
+    if (
+      Number(
+        liberacion[0].liberado
+      ) !== 1
+    ) {
+      throw fallo(
+        "No se pudo confirmar la liberación del bloqueo de Drive."
+      );
+    }
+  }
+}
+
 exports.prepararPadre = async (conexion, carpeta, raiz) => {
-  // Los proyectos aún sin clasificación conservan su ubicación.
-  if (carpeta.id_proyecto == null) return raiz;
+  // Las carpetas antiguas sin proyecto conservan su ubicación.
+  if (carpeta.id_proyecto == null) {
+    const padreServicios =
+      await prepararUbicacionDocumentalServicios(
+        conexion,
+        carpeta,
+        raiz
+      );
+
+    return (
+      padreServicios ||
+      raiz
+    );
+  }
 
   const [filas] = await conexion.execute(`
     SELECT

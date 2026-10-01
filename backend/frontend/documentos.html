@@ -349,7 +349,8 @@
   <link rel="stylesheet" href="/css/navegacion.css">
 </head>
 
-<body>\n  <script src="/js/navegacion.js"></script>
+<body>
+  <script src="/js/navegacion.js"></script>
 
   <header>
 
@@ -572,6 +573,7 @@
     let secciones = [];
     let clientes = [];
     let unidades = [];
+    let serviciosDocumentales = null;
     let carpetas = [];
     let documentos = [];
     let documentosActuales = [];
@@ -696,14 +698,17 @@
               pasos.length - 1
             ];
 
+          const destinoActual =
+            obtenerDestinoVista(
+              actual
+            );
+
           if (
-            !actual ||
-            actual.tipo !==
-              "carpeta"
+            !destinoActual
           ) {
 
             window.alert(
-              "Abre primero una carpeta."
+              "Abre primero una ubicación documental válida."
             );
 
             return;
@@ -796,7 +801,7 @@
               await fetch(
                 "/documentos/subir/" +
                 encodeURIComponent(
-                  actual.id
+                  destinoActual.id_carpeta
                 ),
                 {
                   method:
@@ -866,7 +871,7 @@
             cacheDocumentos.clear();
 
             await seleccionarDocumentos([
-              actual.id
+              destinoActual.id_carpeta
             ]);
 
           } catch (error) {
@@ -2019,11 +2024,14 @@
         return;
       }
 
+      const destino =
+        obtenerDestinoVista(
+          actual
+        );
+
       const mostrar =
         Boolean(
-          actual &&
-          actual.tipo ===
-            "carpeta"
+          destino
         );
 
       panel.hidden =
@@ -2073,6 +2081,103 @@
         null
       );
 
+    }
+
+
+    function obtenerDestinoVista(
+      actual
+    ) {
+
+      if (!actual) {
+        return null;
+      }
+
+      if (
+        actual.tipo ===
+        "carpeta"
+      ) {
+        return obtenerCarpeta(
+          actual.id
+        );
+      }
+
+      if (
+        actual.tipo ===
+          "seccion" &&
+        actual.id ===
+          "servicios"
+      ) {
+        return serviciosDocumentales &&
+          serviciosDocumentales.id_carpeta
+          ? obtenerCarpeta(
+              serviciosDocumentales.id_carpeta
+            )
+          : null;
+      }
+
+      if (
+        actual.tipo ===
+        "cliente"
+      ) {
+        const cliente =
+          clientes.find(
+            (item) =>
+              mismo(
+                item.id_cliente,
+                actual.id
+              )
+          );
+
+        return cliente &&
+          cliente.id_carpeta_documental
+          ? obtenerCarpeta(
+              cliente.id_carpeta_documental
+            )
+          : null;
+      }
+
+      if (
+        actual.tipo ===
+        "unidad"
+      ) {
+        const unidad =
+          unidades.find(
+            (item) =>
+              mismo(
+                item.id_unidad,
+                actual.id
+              )
+          );
+
+        return unidad &&
+          unidad.id_carpeta_documental
+          ? obtenerCarpeta(
+              unidad.id_carpeta_documental
+            )
+          : null;
+      }
+
+      if (
+        actual.tipo ===
+        "proyecto"
+      ) {
+        const principales =
+          carpetas.filter(
+            (carpeta) =>
+              mismo(
+                carpeta.id_proyecto,
+                actual.id
+              ) &&
+              carpeta.id_carpeta_padre ===
+                null
+          );
+
+        return principales.length === 1
+          ? principales[0]
+          : null;
+      }
+
+      return null;
     }
 
 
@@ -2644,63 +2749,69 @@
             "OREX",
             "YAURICOCHA",
             "COLQUISIRI",
-            "HOSPITAL",
-            "OTROS"
+            "HOSPITAL"
           ];
 
 
           const clientesOrdenados =
-            [...clientes].sort(
-              (a, b) => {
+            clientes
+              .filter(
+                (cliente) =>
+                  normalizar(
+                    cliente.nombre_cliente
+                  ) !==
+                  "otros"
+              )
+              .sort(
+                (a, b) => {
 
-                const posicionA =
-                  ordenClientes.indexOf(
-                    a.nombre_cliente
-                  );
-
-
-                const posicionB =
-                  ordenClientes.indexOf(
-                    b.nombre_cliente
-                  );
-
-
-                const ordenA =
-                  posicionA === -1
-                    ? 999
-                    : posicionA;
+                  const posicionA =
+                    ordenClientes.indexOf(
+                      a.nombre_cliente
+                    );
 
 
-                const ordenB =
-                  posicionB === -1
-                    ? 999
-                    : posicionB;
+                  const posicionB =
+                    ordenClientes.indexOf(
+                      b.nombre_cliente
+                    );
 
 
-                if (
-                  ordenA !==
-                  ordenB
-                ) {
+                  const ordenA =
+                    posicionA === -1
+                      ? 999
+                      : posicionA;
 
-                  return (
-                    ordenA -
+                  const ordenB =
+                    posicionB === -1
+                      ? 999
+                      : posicionB;
+
+
+                  if (
+                    ordenA !==
                     ordenB
+                  ) {
+
+                    return (
+                      ordenA -
+                      ordenB
+                    );
+
+                  }
+
+
+                  return String(
+                    a.nombre_cliente
+                  ).localeCompare(
+                    String(
+                      b.nombre_cliente
+                    ),
+                    "es"
                   );
 
                 }
-
-
-                return String(
-                  a.nombre_cliente
-                ).localeCompare(
-                  String(
-                    b.nombre_cliente
-                  ),
-                  "es"
-                );
-
-              }
-            );
+              );
 
 
           for (
@@ -2710,7 +2821,7 @@
 
             tarjeta(
               cliente.nombre_cliente,
-              "Ver unidades",
+              "Ver unidades y documentos",
               () => abrir({
                 tipo:
                   "cliente",
@@ -2726,11 +2837,79 @@
           }
 
 
+          const raizServicios =
+            obtenerDestinoVista(
+              actual
+            );
+
+
+          if (raizServicios) {
+
+            const carpetasDirectas =
+              carpetas.filter(
+                (carpeta) =>
+                  mismo(
+                    carpeta.id_carpeta_padre,
+                    raizServicios.id_carpeta
+                  ) &&
+                  carpeta.tipo_ubicacion !==
+                    "cliente"
+              );
+
+
+            for (
+              const carpeta
+              of carpetasDirectas
+            ) {
+
+              tarjeta(
+                carpeta.nombre_carpeta,
+                "Abrir carpeta",
+                () => abrir({
+                  tipo:
+                    "carpeta",
+
+                  id:
+                    carpeta.id_carpeta,
+
+                  nombre:
+                    carpeta.nombre_carpeta
+                })
+              );
+
+            }
+
+
+            seleccionarDocumentos([
+              raizServicios.id_carpeta
+            ]);
+
+          }
+
+
+          const idServicioEstructura =
+            serviciosDocumentales &&
+            serviciosDocumentales.id_servicio !=
+              null
+              ? Number(
+                  serviciosDocumentales.id_servicio
+                )
+              : null;
+
+
           const sinCliente =
             filas.filter(
               (c) =>
                 c.id_cliente ==
-                null
+                  null &&
+                (
+                  idServicioEstructura ===
+                    null ||
+                  Number(
+                    c.id_servicio
+                  ) !==
+                    idServicioEstructura
+                )
             );
 
 
@@ -2798,7 +2977,7 @@
 
           tarjeta(
             unidad.nombre_unidad,
-            "Ver proyectos",
+            "Ver proyectos y documentos",
             () => abrir({
               tipo:
                 "unidad",
@@ -2814,13 +2993,68 @@
         }
 
 
+        const raizCliente =
+          obtenerDestinoVista(
+            actual
+          );
+
+
+        let carpetasDirectas =
+          [];
+
+
+        if (raizCliente) {
+
+          carpetasDirectas =
+            carpetas.filter(
+              (carpeta) =>
+                mismo(
+                  carpeta.id_carpeta_padre,
+                  raizCliente.id_carpeta
+                ) &&
+                carpeta.tipo_ubicacion !==
+                  "unidad"
+            );
+
+
+          for (
+            const carpeta
+            of carpetasDirectas
+          ) {
+
+            tarjeta(
+              carpeta.nombre_carpeta,
+              "Abrir carpeta",
+              () => abrir({
+                tipo:
+                  "carpeta",
+
+                id:
+                  carpeta.id_carpeta,
+
+                nombre:
+                  carpeta.nombre_carpeta
+              })
+            );
+
+          }
+
+
+          seleccionarDocumentos([
+            raizCliente.id_carpeta
+          ]);
+
+        }
+
+
         if (
-          !unidadesCliente.length
+          !unidadesCliente.length &&
+          !carpetasDirectas.length
         ) {
 
           $("descripcion")
             .textContent =
-            "Este cliente todavía no tiene unidades registradas.";
+            "Este cliente todavía no tiene unidades ni carpetas registradas.";
 
         }
 
@@ -2880,13 +3114,66 @@
         }
 
 
+        const raizUnidad =
+          obtenerDestinoVista(
+            actual
+          );
+
+
+        let carpetasDirectas =
+          [];
+
+
+        if (raizUnidad) {
+
+          carpetasDirectas =
+            carpetas.filter(
+              (carpeta) =>
+                mismo(
+                  carpeta.id_carpeta_padre,
+                  raizUnidad.id_carpeta
+                )
+            );
+
+
+          for (
+            const carpeta
+            of carpetasDirectas
+          ) {
+
+            tarjeta(
+              carpeta.nombre_carpeta,
+              "Abrir carpeta",
+              () => abrir({
+                tipo:
+                  "carpeta",
+
+                id:
+                  carpeta.id_carpeta,
+
+                nombre:
+                  carpeta.nombre_carpeta
+              })
+            );
+
+          }
+
+
+          seleccionarDocumentos([
+            raizUnidad.id_carpeta
+          ]);
+
+        }
+
+
         if (
-          !proyectos.length
+          !proyectos.length &&
+          !carpetasDirectas.length
         ) {
 
           $("descripcion")
             .textContent =
-            "Esta unidad todavía no tiene proyectos registrados.";
+            "Esta unidad todavía no tiene proyectos ni carpetas registradas.";
 
         }
 
@@ -3476,6 +3763,14 @@
             : [];
 
 
+        serviciosDocumentales =
+          organizacion.servicios_documentales &&
+          typeof organizacion.servicios_documentales ===
+            "object"
+            ? organizacion.servicios_documentales
+            : null;
+
+
         carpetas =
           Array.isArray(
             organizacion.carpetas
@@ -3639,6 +3934,7 @@
   </script>
 
   <script src="/js/carpetasAdministracionRRHH.js"></script>
+  <script src="/js/carpetasServiciosProyectos.js"></script>
 </body>
 
 </html>

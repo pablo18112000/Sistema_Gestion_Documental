@@ -304,7 +304,34 @@ exports.asegurarEnDrive = async (conexion, carpeta) => {
     raiz
   );
 
-  for (const nivel of niveles) {
+  const omitirNiveles =
+    Number.isSafeInteger(
+      Number(
+        carpeta.omitir_niveles_drive
+      )
+    )
+      ? Number(
+          carpeta.omitir_niveles_drive
+        )
+      : 0;
+
+  if (
+    omitirNiveles < 0 ||
+    omitirNiveles >
+      niveles.length
+  ) {
+    throw fallo(
+      409,
+      "La ubicación de Drive no coincide con la jerarquía documental."
+    );
+  }
+
+  for (
+    const nivel
+    of niveles.slice(
+      omitirNiveles
+    )
+  ) {
     let idDrive = nivel.id_drive;
 
     if (idDrive) {

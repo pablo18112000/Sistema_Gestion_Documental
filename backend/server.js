@@ -42,6 +42,11 @@ const rutasCarpetasAdministracionRRHH =
     "./routes/carpetasAdministracionRRHH"
   );
 
+const rutasCarpetasServiciosProyectos =
+  require(
+    "./routes/carpetasServiciosProyectos"
+  );
+
 const app = express();
 
 const produccion =
@@ -121,7 +126,8 @@ app.use(
     "/asignaciones",
     "/proyectos",
     "/archivos",
-    "/carpetas-administracion-rrhh"
+    "/carpetas-administracion-rrhh",
+    "/carpetas-servicios-proyectos"
   ],
   (req, res, next) => {
 
@@ -180,6 +186,11 @@ app.use(
 app.use(
   "/carpetas-administracion-rrhh",
   rutasCarpetasAdministracionRRHH
+);
+
+app.use(
+  "/carpetas-servicios-proyectos",
+  rutasCarpetasServiciosProyectos
 );
 
 // =====================================
