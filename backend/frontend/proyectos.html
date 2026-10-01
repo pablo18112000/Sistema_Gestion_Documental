@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Proyectos — COEMSA</title>
+  <title>Crear proyecto — COEMSA</title>
 
   <style>
     * { box-sizing: border-box; }
@@ -51,7 +51,7 @@
       font-weight: bold;
     }
 
-    input, textarea {
+    input, select, textarea {
       width: 100%;
       padding: 12px;
       border: 1px solid #bbc9d5;
@@ -106,7 +106,7 @@
 
 <body>\n  <script src="/js/navegacion.js"></script>
   <header>
-    <h1>📁 Proyectos COEMSA</h1>
+    <h1>📁 Crear proyecto COEMSA</h1>
     <nav>
       <a id="volver" href="/login.html">Volver al panel</a>
       <button type="button" onclick="cerrarSesion()">
@@ -124,6 +124,34 @@
       <h2>Nuevo proyecto</h2>
 
       <form id="formProyecto">
+
+        <label for="cliente">
+          Cliente
+        </label>
+
+        <select
+          id="cliente"
+          required
+        >
+          <option value="">
+            Selecciona un cliente
+          </option>
+        </select>
+
+        <label for="unidad">
+          Unidad / Lugar
+        </label>
+
+        <select
+          id="unidad"
+          required
+          disabled
+        >
+          <option value="">
+            Selecciona una unidad
+          </option>
+        </select>
+
         <label for="nombre">Nombre del proyecto</label>
         <input
           id="nombre"
@@ -153,6 +181,8 @@
           <thead>
             <tr>
               <th scope="col">Proyecto</th>
+              <th scope="col">Cliente</th>
+              <th scope="col">Unidad / Lugar</th>
               <th scope="col">Descripción</th>
               <th scope="col">Permiso de subida</th>
             </tr>
@@ -170,6 +200,13 @@
     const formulario = document.getElementById("formProyecto");
     const guardar = document.getElementById("guardar");
 
+    const cliente =
+      document.getElementById("cliente");
+
+    const unidad =
+      document.getElementById("unidad");
+
+    let ubicaciones = [];
     let puedeCrear = false;
     let guardando = false;
 
@@ -197,6 +234,148 @@
       return datos;
     }
 
+    function cargarUnidades() {
+
+      const idCliente =
+        Number(cliente.value);
+
+      unidad.replaceChildren(
+        new Option(
+          "Selecciona una unidad",
+          ""
+        )
+      );
+
+      if (
+        !Number.isSafeInteger(idCliente) ||
+        idCliente < 1
+      ) {
+        unidad.disabled = true;
+        return;
+      }
+
+      const disponibles =
+        ubicaciones.filter(
+          (item) => {
+
+            const idUnidad =
+              Number(
+                item.id_unidad
+              );
+
+            return (
+              Number(item.id_cliente) ===
+                idCliente &&
+              Number.isSafeInteger(
+                idUnidad
+              ) &&
+              idUnidad > 0 &&
+              item.nombre_unidad
+            );
+          }
+        );
+
+      for (
+        const item
+        of disponibles
+      ) {
+
+        unidad.add(
+          new Option(
+            item.nombre_unidad,
+            String(
+              item.id_unidad
+            )
+          )
+        );
+      }
+
+      if (
+        disponibles.length === 0
+      ) {
+
+        unidad.replaceChildren(
+          new Option(
+            "Este cliente aún no tiene unidades",
+            ""
+          )
+        );
+
+        unidad.disabled = true;
+
+        return;
+      }
+
+      unidad.disabled = false;
+    }
+
+
+    async function cargarUbicaciones() {
+
+      const datos =
+        await solicitar(
+          "/proyectos/ubicaciones"
+        );
+
+      if (
+        !Array.isArray(
+          datos.ubicaciones
+        )
+      ) {
+        throw new Error(
+          "La lista de ubicaciones no es válida."
+        );
+      }
+
+      ubicaciones =
+        datos.ubicaciones;
+
+      cliente.replaceChildren(
+        new Option(
+          "Selecciona un cliente",
+          ""
+        )
+      );
+
+      const vistos =
+        new Set();
+
+      for (
+        const item
+        of ubicaciones
+      ) {
+
+        const id =
+          Number(
+            item.id_cliente
+          );
+
+        if (
+          vistos.has(id)
+        ) {
+          continue;
+        }
+
+        vistos.add(id);
+
+        cliente.add(
+          new Option(
+            item.nombre_cliente,
+            String(id)
+          )
+        );
+      }
+
+      cargarUnidades();
+    }
+
+
+    cliente.addEventListener(
+      "change",
+      cargarUnidades
+    );
+
+
     async function cargarProyectos() {
       const datos = await solicitar("/proyectos");
       const lista = document.getElementById("listaProyectos");
@@ -207,7 +386,7 @@
         const fila = document.createElement("tr");
         const celda = document.createElement("td");
 
-        celda.colSpan = 3;
+        celda.colSpan = 5;
         celda.textContent = "No tienes proyectos disponibles.";
         fila.appendChild(celda);
         lista.appendChild(fila);
@@ -219,7 +398,16 @@
 
         const valores = [
           proyecto.nombre_proyecto,
-          proyecto.descripcion || "Sin descripción",
+
+          proyecto.nombre_cliente ||
+            "Sin asignar",
+
+          proyecto.nombre_unidad ||
+            "Sin asignar",
+
+          proyecto.descripcion ||
+            "Sin descripción",
+
           Number(proyecto.puede_subir) === 1
             ? "Permitido por tu rol o asignación"
             : "Solo consulta"
@@ -240,9 +428,28 @@
 
       if (!puedeCrear || guardando) return;
 
-      const nombre = document.getElementById("nombre").value.trim();
+      const idUnidad =
+        Number(
+          unidad.value
+        );
+
+      const nombre =
+        document.getElementById("nombre")
+          .value.trim();
+
       const descripcion =
-        document.getElementById("descripcion").value.trim();
+        document.getElementById("descripcion")
+          .value.trim();
+
+      if (
+        !Number.isSafeInteger(idUnidad) ||
+        idUnidad < 1
+      ) {
+        mensaje.textContent =
+          "Selecciona el cliente y la unidad donde se creará el proyecto.";
+
+        return;
+      }
 
       if (!nombre) {
         mensaje.textContent = "Escribe el nombre del proyecto.";
@@ -260,13 +467,22 @@
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
+            id_unidad: idUnidad,
             nombre_proyecto: nombre,
             descripcion
           })
         });
 
         formulario.reset();
-        mensaje.textContent = datos.mensaje;
+
+        cargarUnidades();
+
+        mensaje.textContent =
+          datos.mensaje +
+          "\nUbicación: " +
+          datos.proyecto.nombre_cliente +
+          " / " +
+          datos.proyecto.nombre_unidad;
 
         try {
           await cargarProyectos();
@@ -301,13 +517,26 @@
       document.getElementById("volver").href =
         paneles[usuario.nombre_rol] || "/login.html";
 
-      puedeCrear = ["Administrador", "Supervisor"]
-        .includes(usuario.nombre_rol);
+      puedeCrear =
+        usuario.nombre_rol ===
+          "Administrador" ||
+        (
+          usuario.nombre_rol ===
+            "Supervisor" &&
+          Number(usuario.id_area) === 2
+        );
 
-      document.getElementById("seccionCrear").hidden =
+      document.getElementById(
+        "seccionCrear"
+      ).hidden =
         !puedeCrear;
 
       try {
+
+        if (puedeCrear) {
+          await cargarUbicaciones();
+        }
+
         await cargarProyectos();
         mensaje.textContent = "";
       } catch (error) {

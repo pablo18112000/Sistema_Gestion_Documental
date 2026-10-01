@@ -38,15 +38,228 @@ const secciones = [
   }
 ];
 
+function seccionSupervisor(idArea) {
+
+  const area =
+    Number(idArea);
+
+
+  if (
+    area === 1 ||
+    area === 3
+  ) {
+    return "administracion";
+  }
+
+
+  if (area === 2) {
+    return "servicios";
+  }
+
+
+  if (area === 4) {
+    return "logistica";
+  }
+
+
+  if (area === 5) {
+    return "seguridad";
+  }
+
+
+  return null;
+}
+
+
+function filtroServicioSupervisor(idArea) {
+
+  const area =
+    Number(idArea);
+
+
+  /*
+   * Recursos Humanos + Administración
+   */
+  if (
+    area === 1 ||
+    area === 3
+  ) {
+
+    return {
+      sql:
+        "s.id_proyecto IS NULL AND s.id_area IN (1, 3)",
+      parametros: []
+    };
+  }
+
+
+  /*
+   * Servicios y Proyectos.
+   *
+   * Todo proyecto se presenta dentro de esta sección,
+   * incluso si algún registro antiguo conserva otra área.
+   */
+  if (area === 2) {
+
+    return {
+      sql:
+        "(s.id_proyecto IS NOT NULL OR (s.id_proyecto IS NULL AND s.id_area = 2))",
+      parametros: []
+    };
+  }
+
+
+  /*
+   * Logística
+   */
+  if (area === 4) {
+
+    return {
+      sql:
+        "s.id_proyecto IS NULL AND s.id_area = 4",
+      parametros: []
+    };
+  }
+
+
+  /*
+   * Seguridad
+   */
+  if (area === 5) {
+
+    return {
+      sql:
+        "s.id_proyecto IS NULL AND s.id_area = 5",
+      parametros: []
+    };
+  }
+
+
+  /*
+   * Área desconocida:
+   * no entregar carpetas.
+   */
+  return {
+    sql: "1 = 0",
+    parametros: []
+  };
+}
+
+
+function filtroDocumentoSupervisor(usuario) {
+
+  if (
+    !usuario ||
+    usuario.nombre_rol !==
+      "Supervisor"
+  ) {
+
+    return {
+      sql: "1 = 1",
+      parametros: []
+    };
+  }
+
+
+  const area =
+    Number(
+      usuario.id_area
+    );
+
+
+  const proyecto =
+    "COALESCE(d.id_proyecto, s.id_proyecto)";
+
+  const areaDocumento =
+    "COALESCE(d.id_area, s.id_area)";
+
+
+  if (
+    area === 1 ||
+    area === 3
+  ) {
+
+    return {
+      sql:
+        proyecto +
+        " IS NULL AND " +
+        areaDocumento +
+        " IN (1, 3)",
+      parametros: []
+    };
+  }
+
+
+  if (area === 2) {
+
+    return {
+      sql:
+        "(" +
+        proyecto +
+        " IS NOT NULL OR (" +
+        proyecto +
+        " IS NULL AND " +
+        areaDocumento +
+        " = 2))",
+      parametros: []
+    };
+  }
+
+
+  if (area === 4) {
+
+    return {
+      sql:
+        proyecto +
+        " IS NULL AND " +
+        areaDocumento +
+        " = 4",
+      parametros: []
+    };
+  }
+
+
+  if (area === 5) {
+
+    return {
+      sql:
+        proyecto +
+        " IS NULL AND " +
+        areaDocumento +
+        " = 5",
+      parametros: []
+    };
+  }
+
+
+  return {
+    sql: "1 = 0",
+    parametros: []
+  };
+}
+
+
 exports.consultar = async (req, res) => {
   try {
     const usuario = req.usuario;
 
-    // Todos los roles autorizados pueden consultar la organización.
-    // El cálculo de permisos de subida se conserva.
+    // El Administrador conserva acceso completo.
+    // El Supervisor consulta únicamente su sección.
+    // El comportamiento actual del rol Usuario se conserva.
     const esUsuario = false;
+
     const esAdministrador =
       usuario.nombre_rol === "Administrador";
+
+    const esSupervisor =
+      usuario.nombre_rol === "Supervisor";
+
+    const seccionPermitidaSupervisor =
+      esSupervisor
+        ? seccionSupervisor(
+            usuario.id_area
+          )
+        : null;
 
     // Los clientes y las unidades se consultan directamente.
     // Así aparecen aunque todavía no tengan proyectos o carpetas.
@@ -77,11 +290,29 @@ exports.consultar = async (req, res) => {
       usuario.id_area
     ];
 
-    // Administrador y Supervisor pueden consultar todas las carpetas.
-    // Usuario: solo su área o los proyectos asignados.
+    // Administrador: todas las carpetas.
+    // Supervisor: únicamente su sección.
+    // Usuario: se conserva el comportamiento actual.
     let filtro = "";
 
-    if (esUsuario) {
+    if (esSupervisor) {
+
+      const accesoSupervisor =
+        filtroServicioSupervisor(
+          usuario.id_area
+        );
+
+      filtro =
+        "WHERE (" +
+        accesoSupervisor.sql +
+        ")";
+
+      parametros.push(
+        ...accesoSupervisor.parametros
+      );
+
+    } else if (esUsuario) {
+
       filtro = `
         WHERE (
           (
@@ -209,13 +440,27 @@ exports.consultar = async (req, res) => {
     });
 
     const disponibles = secciones
-      .filter((seccion) =>
-        !esUsuario ||
-        seccion.areas.includes(Number(usuario.id_area)) ||
-        carpetas.some((carpeta) =>
-          carpeta.seccion === seccion.clave
-        )
-      )
+      .filter((seccion) => {
+
+        if (esSupervisor) {
+          return (
+            seccion.clave ===
+            seccionPermitidaSupervisor
+          );
+        }
+
+        return (
+          !esUsuario ||
+          seccion.areas.includes(
+            Number(usuario.id_area)
+          ) ||
+          carpetas.some(
+            (carpeta) =>
+              carpeta.seccion ===
+              seccion.clave
+          )
+        );
+      })
       .map(({ clave, nombre }) => ({
         clave,
         nombre
@@ -232,11 +477,22 @@ exports.consultar = async (req, res) => {
       });
     }
 
+    const mostrarClientes =
+      !esSupervisor ||
+      seccionPermitidaSupervisor ===
+        "servicios";
+
     return res.json({
       success: true,
       secciones: disponibles,
-      clientes,
-      unidades,
+      clientes:
+        mostrarClientes
+          ? clientes
+          : [],
+      unidades:
+        mostrarClientes
+          ? unidades
+          : [],
       carpetas
     });
 
@@ -280,6 +536,12 @@ exports.buscarGeneral = async (req, res) => {
   }
 
   try {
+
+    const accesoSupervisor =
+      filtroDocumentoSupervisor(
+        req.usuario
+      );
+
     const [filas] = await pool.query(`
       SELECT
         d.id_documento,
@@ -322,7 +584,10 @@ exports.buscarGeneral = async (req, res) => {
         ON cl.id_cliente = uc.id_cliente
       LEFT JOIN usuarios u
         ON u.id_usuario = d.id_usuario
-      WHERE INSTR(
+      WHERE (
+        ${accesoSupervisor.sql}
+      )
+        AND INSTR(
         LOWER(
           CONCAT_WS(
             ' ',

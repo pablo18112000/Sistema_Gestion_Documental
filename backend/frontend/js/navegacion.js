@@ -25,7 +25,7 @@
           url: "/buscar_documentos.html"
         },
         {
-          nombre: "Proyectos",
+          nombre: "Crear proyecto",
           url: "/proyectos.html"
         },
         {
@@ -57,7 +57,7 @@
           url: "/buscar_documentos.html"
         },
         {
-          nombre: "Proyectos",
+          nombre: "Crear proyecto",
           url: "/proyectos.html"
         }
       ]
@@ -403,6 +403,16 @@
       const opcion
       of perfil.opciones
     ) {
+
+      // Crear proyecto corresponde únicamente
+      // a Servicios y Proyectos.
+      if (
+        rol === "Supervisor" &&
+        opcion.url === "/proyectos.html" &&
+        Number(usuario.id_area) !== 2
+      ) {
+        continue;
+      }
 
       menu.appendChild(
         crearEnlace(

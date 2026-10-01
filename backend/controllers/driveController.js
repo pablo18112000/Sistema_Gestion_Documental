@@ -57,15 +57,142 @@ function responderError(res, error) {
 
 
 function filtroLectura(usuario) {
-  const roles = ["Administrador", "Supervisor", "Usuario"];
 
-  if (!usuario || !roles.includes(usuario.nombre_rol)) {
-    throw fallo(403, "Tu cuenta no tiene permiso de consulta.");
+  const roles = [
+    "Administrador",
+    "Supervisor",
+    "Usuario"
+  ];
+
+
+  if (
+    !usuario ||
+    !roles.includes(
+      usuario.nombre_rol
+    )
+  ) {
+
+    throw fallo(
+      403,
+      "Tu cuenta no tiene permiso de consulta."
+    );
   }
 
-  // Las rutas mantienen la comprobación de sesión y cuenta activa.
-  // Esta regla solo amplía la lectura.
-  return { sql: "1 = 1", parametros: [] };
+
+  /*
+   * Administrador:
+   * conserva acceso total.
+   *
+   * Usuario:
+   * conserva el comportamiento actual.
+   */
+  if (
+    usuario.nombre_rol !==
+      "Supervisor"
+  ) {
+
+    return {
+      sql: "1 = 1",
+      parametros: []
+    };
+  }
+
+
+  /*
+   * Supervisor:
+   * acceso únicamente a su sección.
+   */
+  const area =
+    Number(
+      usuario.id_area
+    );
+
+
+  const proyecto =
+    "COALESCE(d.id_proyecto, s.id_proyecto)";
+
+  const areaDocumento =
+    "COALESCE(d.id_area, s.id_area)";
+
+
+  /*
+   * Recursos Humanos + Administración
+   */
+  if (
+    area === 1 ||
+    area === 3
+  ) {
+
+    return {
+      sql:
+        proyecto +
+        " IS NULL AND " +
+        areaDocumento +
+        " IN (1, 3)",
+      parametros: []
+    };
+  }
+
+
+  /*
+   * Servicios y Proyectos
+   */
+  if (area === 2) {
+
+    return {
+      sql:
+        "(" +
+        proyecto +
+        " IS NOT NULL OR (" +
+        proyecto +
+        " IS NULL AND " +
+        areaDocumento +
+        " = 2))",
+      parametros: []
+    };
+  }
+
+
+  /*
+   * Logística
+   */
+  if (area === 4) {
+
+    return {
+      sql:
+        proyecto +
+        " IS NULL AND " +
+        areaDocumento +
+        " = 4",
+      parametros: []
+    };
+  }
+
+
+  /*
+   * Seguridad
+   */
+  if (area === 5) {
+
+    return {
+      sql:
+        proyecto +
+        " IS NULL AND " +
+        areaDocumento +
+        " = 5",
+      parametros: []
+    };
+  }
+
+
+  /*
+   * Un Supervisor sin un área reconocida
+   * no recibe documentos.
+   */
+  return {
+    sql: "1 = 0",
+    parametros: []
+  };
 }
 
 const consultaDocumentos = `

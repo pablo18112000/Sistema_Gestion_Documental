@@ -35,12 +35,91 @@ function responderError(res, error) {
   });
 }
 
+function filtroRevision(usuario) {
+
+  if (!usuario) {
+    return { sql: "1 = 0" };
+  }
+
+  // El Administrador conserva acceso completo.
+  if (usuario.nombre_rol === "Administrador") {
+    return { sql: "1 = 1" };
+  }
+
+  // Esta pantalla solamente admite Administrador o Supervisor.
+  if (usuario.nombre_rol !== "Supervisor") {
+    return { sql: "1 = 0" };
+  }
+
+  const area = Number(usuario.id_area);
+
+  const proyecto =
+    "COALESCE(d.id_proyecto, s.id_proyecto)";
+
+  const areaDocumento =
+    "COALESCE(d.id_area, s.id_area)";
+
+  // Recursos Humanos + Administración.
+  if (area === 1 || area === 3) {
+    return {
+      sql:
+        proyecto +
+        " IS NULL AND " +
+        areaDocumento +
+        " IN (1, 3)"
+    };
+  }
+
+  // Servicios y Proyectos.
+  // Cualquier documento asociado a proyecto pertenece
+  // visualmente a esta sección.
+  if (area === 2) {
+    return {
+      sql:
+        "(" +
+        proyecto +
+        " IS NOT NULL OR (" +
+        proyecto +
+        " IS NULL AND " +
+        areaDocumento +
+        " = 2))"
+    };
+  }
+
+  // Logística.
+  if (area === 4) {
+    return {
+      sql:
+        proyecto +
+        " IS NULL AND " +
+        areaDocumento +
+        " = 4"
+    };
+  }
+
+  // Seguridad.
+  if (area === 5) {
+    return {
+      sql:
+        proyecto +
+        " IS NULL AND " +
+        areaDocumento +
+        " = 5"
+    };
+  }
+
+  // Un Supervisor sin área reconocida no obtiene documentos.
+  return { sql: "1 = 0" };
+}
+
 // =====================================
 // DOCUMENTOS PENDIENTES
 // =====================================
 
 exports.pendientes = async (req, res) => {
   try {
+    const acceso = filtroRevision(req.usuario);
+
     const [filas] = await pool.query(`
       SELECT
         d.id_documento,
@@ -67,6 +146,7 @@ exports.pendientes = async (req, res) => {
       LEFT JOIN areas a
         ON a.id_area = COALESCE(d.id_area, s.id_area)
       WHERE LOWER(TRIM(d.estado_documento)) = 'pendiente'
+        AND (${acceso.sql})
       ORDER BY d.fecha_subida ASC, d.id_documento ASC
       LIMIT 201
     `);
@@ -88,6 +168,7 @@ exports.pendientes = async (req, res) => {
 async function revisarDocumento(req, res, nuevoEstado) {
   const idDocumento = Number(req.params.idDocumento);
   const idRevisor = Number(req.usuario?.id_usuario);
+  const acceso = filtroRevision(req.usuario);
 
   if (
     !Number.isSafeInteger(idDocumento) ||
@@ -175,16 +256,24 @@ async function revisarDocumento(req, res, nuevoEstado) {
     // Bloquea este documento hasta terminar la revisión.
     const [documentos] = await conexion.query(
       `
-        SELECT id_documento, estado_documento, version
-        FROM documentos
-        WHERE id_documento = ?
+        SELECT
+          d.id_documento,
+          d.estado_documento,
+          d.version
+        FROM documentos d
+        LEFT JOIN carpetas_documentos c
+          ON c.id_carpeta = d.id_carpeta
+        LEFT JOIN servicios_proyectos s
+          ON s.id_servicio = c.id_servicio
+        WHERE d.id_documento = ?
+          AND (${acceso.sql})
         FOR UPDATE
       `,
       [idDocumento]
     );
 
     if (documentos.length === 0) {
-      throw errorHTTP(404, "El documento no existe.");
+      throw errorHTTP(404, "Documento no disponible para tu área.");
     }
 
     const documento = documentos[0];
@@ -344,6 +433,8 @@ exports.rechazarDocumento = (req, res) => {
 
 exports.historial = async (req, res) => {
   try {
+    const acceso = filtroRevision(req.usuario);
+
     const [filas] = await pool.query(`
       SELECT
         ad.id_aprobacion,
@@ -359,9 +450,14 @@ exports.historial = async (req, res) => {
       FROM aprobaciones_documentos ad
       LEFT JOIN documentos d
         ON d.id_documento = ad.id_documento
+      LEFT JOIN carpetas_documentos c
+        ON c.id_carpeta = d.id_carpeta
+      LEFT JOIN servicios_proyectos s
+        ON s.id_servicio = c.id_servicio
       LEFT JOIN usuarios u
         ON u.id_usuario = d.id_usuario
       WHERE LOWER(TRIM(ad.estado)) IN ('aprobado', 'rechazado')
+        AND (${acceso.sql})
       ORDER BY ad.fecha_revision DESC, ad.id_aprobacion DESC
       LIMIT 201
     `);
