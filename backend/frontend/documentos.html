@@ -1,12 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <title>Archivo documental | COEMSA</title>
 
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
@@ -72,6 +76,18 @@
       cursor: not-allowed;
     }
 
+    #atras {
+      display: none;
+      background: #123454;
+      color: white;
+      border-color: #123454;
+      font-weight: bold;
+    }
+
+    #atras:hover {
+      background: #1d4b75;
+    }
+
     a:focus-visible,
     button:focus-visible,
     input:focus-visible {
@@ -90,6 +106,7 @@
       border: none;
       padding: 5px 8px;
       color: #075985;
+      background: transparent;
     }
 
     .cabecera {
@@ -111,8 +128,7 @@
 
     .carpetas {
       display: grid;
-      grid-template-columns:
-        repeat(auto-fit, minmax(230px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
       gap: 16px;
       margin: 24px 0;
     }
@@ -123,6 +139,11 @@
       min-height: 130px;
       border-radius: 14px;
       box-shadow: 0 3px 12px #12345408;
+    }
+
+    .carpeta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px #12345418;
     }
 
     .icono {
@@ -150,6 +171,10 @@
       border-radius: 14px;
       background: white;
       margin-bottom: 24px;
+    }
+
+    .buscador-documentos {
+      margin-top: 15px;
     }
 
     input {
@@ -218,18 +243,24 @@
       display: none !important;
     }
   </style>
+  <link rel="stylesheet" href="/css/navegacion.css">
+  <script src="/js/navegacion.js" defer></script>
 </head>
 
 <body>
+
   <header>
-    <h1>COEMSA · Archivo documental</h1>
+
+    <h1>
+      COEMSA · Archivo documental
+    </h1>
 
     <p>
-      Documentos organizados por áreas, clientes,
-      unidades y proyectos.
+      Documentos organizados por áreas, clientes, unidades y proyectos.
     </p>
 
     <nav aria-label="Menú principal">
+
       <a id="volver" href="/login.html">
         Volver al panel
       </a>
@@ -249,10 +280,13 @@
       <button id="salir" type="button">
         Cerrar sesión
       </button>
+
     </nav>
+
   </header>
 
   <main>
+
     <p
       id="mensaje"
       role="status"
@@ -262,6 +296,7 @@
     </p>
 
     <div class="cabecera">
+
       <div>
         <h2 id="titulo">
           Organización documental
@@ -273,13 +308,26 @@
         ></p>
       </div>
 
-      <button
-        id="actualizar"
-        type="button"
-        disabled
-      >
-        Actualizar
-      </button>
+      <div class="acciones">
+
+        <button
+          id="atras"
+          type="button"
+          style="display: none;"
+        >
+          ← Atrás
+        </button>
+
+        <button
+          id="actualizar"
+          type="button"
+          disabled
+        >
+          Actualizar
+        </button>
+
+      </div>
+
     </div>
 
     <nav
@@ -298,19 +346,27 @@
       class="documentos"
       hidden
     >
+
       <h2>
         Documentos de esta carpeta
       </h2>
 
-      <label for="buscar">
-        Buscar documento:
-      </label>
+      <div class="buscador-documentos">
 
-      <input
-        id="buscar"
-        type="search"
-        placeholder="Nombre, autor o estado"
-      >
+        <label for="buscar">
+          Buscar documento:
+        </label>
+
+        <br><br>
+
+        <input
+          id="buscar"
+          type="search"
+          autocomplete="off"
+          placeholder="Nombre, autor o estado"
+        >
+
+      </div>
 
       <p
         id="contador"
@@ -318,7 +374,9 @@
       ></p>
 
       <div class="tabla">
+
         <table>
+
           <thead>
             <tr>
               <th>Documento</th>
@@ -330,16 +388,22 @@
           </thead>
 
           <tbody id="filas"></tbody>
+
         </table>
+
       </div>
+
     </section>
+
   </main>
 
   <script src="/js/auth.js"></script>
 
   <script>
+
     const $ = (id) =>
       document.getElementById(id);
+
 
     let secciones = [];
     let clientes = [];
@@ -350,28 +414,38 @@
     let pasos = [];
     let cargando = false;
 
+
     function normalizar(valor) {
+
       return String(valor ?? "")
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase();
+
     }
 
+
     function mismo(a, b) {
+
       return (
         a != null &&
         b != null &&
         String(a) === String(b)
       );
+
     }
 
+
     async function consultar(url) {
+
       const respuesta = await fetch(url, {
         credentials: "same-origin",
         cache: "no-store"
       });
 
+
       if (respuesta.status === 401) {
+
         window.location.replace(
           "/login.html"
         );
@@ -379,65 +453,159 @@
         throw new Error(
           "La sesión terminó."
         );
+
       }
+
 
       const datos =
         await respuesta.json();
+
 
       if (
         !respuesta.ok ||
         !datos.success
       ) {
+
         throw new Error(
           datos.mensaje ||
           "No se pudo cargar la información."
         );
+
       }
 
+
       return datos;
+
     }
+
+
+    function actualizarBotonAtras() {
+
+      const boton =
+        $("atras");
+
+
+      if (pasos.length === 0) {
+
+        boton.style.display =
+          "none";
+
+      } else {
+
+        boton.style.display =
+          "inline-block";
+
+      }
+
+    }
+
 
     function abrir(paso) {
+
       pasos.push(paso);
 
-      $("buscar").value = "";
+      $("buscar").value =
+        "";
 
       dibujar();
+
     }
+
+
+    function volverAtras() {
+
+      if (
+        pasos.length === 0
+      ) {
+
+        return;
+
+      }
+
+
+      pasos.pop();
+
+
+      $("buscar").value =
+        "";
+
+
+      documentosActuales =
+        [];
+
+
+      dibujar();
+
+    }
+
 
     function tarjeta(
       nombre,
       detalle,
       accion
     ) {
-      const boton =
-        document.createElement("button");
 
-      boton.type = "button";
-      boton.className = "carpeta";
+      const boton =
+        document.createElement(
+          "button"
+        );
+
+
+      boton.type =
+        "button";
+
+
+      boton.className =
+        "carpeta";
+
 
       const icono =
-        document.createElement("span");
+        document.createElement(
+          "span"
+        );
 
-      icono.className = "icono";
-      icono.textContent = "📁";
+
+      icono.className =
+        "icono";
+
+
+      icono.textContent =
+        "📁";
+
 
       icono.setAttribute(
         "aria-hidden",
         "true"
       );
 
-      const titulo =
-        document.createElement("span");
 
-      titulo.className = "nombre";
-      titulo.textContent = nombre;
+      const titulo =
+        document.createElement(
+          "span"
+        );
+
+
+      titulo.className =
+        "nombre";
+
+
+      titulo.textContent =
+        nombre;
+
 
       const texto =
-        document.createElement("span");
+        document.createElement(
+          "span"
+        );
 
-      texto.className = "detalle";
-      texto.textContent = detalle;
+
+      texto.className =
+        "detalle";
+
+
+      texto.textContent =
+        detalle;
+
 
       boton.append(
         icono,
@@ -445,233 +613,376 @@
         texto
       );
 
+
       boton.addEventListener(
         "click",
         accion
       );
 
+
       $("carpetas")
-        .appendChild(boton);
+        .appendChild(
+          boton
+        );
+
     }
+
 
     function grupos(
       filas,
       campoId,
       campoNombre
     ) {
-      const resultado = new Map();
 
-      for (const fila of filas) {
+      const resultado =
+        new Map();
+
+
+      for (
+        const fila
+        of filas
+      ) {
+
         if (
           fila[campoId] == null
         ) {
+
           continue;
+
         }
 
+
         resultado.set(
-          String(fila[campoId]),
+          String(
+            fila[campoId]
+          ),
           {
-            id: fila[campoId],
+            id:
+              fila[campoId],
+
             nombre:
               fila[campoNombre] ||
               "Sin nombre"
           }
         );
+
       }
+
 
       return [
         ...resultado.values()
-      ].sort((a, b) =>
-        a.nombre.localeCompare(
-          b.nombre,
-          "es"
-        )
+      ].sort(
+        (a, b) =>
+          a.nombre.localeCompare(
+            b.nombre,
+            "es"
+          )
       );
+
     }
 
+
     function dibujarRuta() {
-      $("ruta").replaceChildren();
+
+      $("ruta")
+        .replaceChildren();
+
 
       const inicio =
         document.createElement(
           "button"
         );
 
-      inicio.type = "button";
-      inicio.textContent = "COEMSA";
+
+      inicio.type =
+        "button";
+
+
+      inicio.textContent =
+        "COEMSA";
+
 
       inicio.addEventListener(
         "click",
         () => {
-          pasos = [];
 
-          $("buscar").value = "";
+          pasos =
+            [];
+
+
+          $("buscar").value =
+            "";
+
+
+          documentosActuales =
+            [];
+
 
           dibujar();
+
         }
       );
 
+
       $("ruta")
-        .appendChild(inicio);
+        .appendChild(
+          inicio
+        );
+
 
       pasos.forEach(
         (paso, indice) => {
+
           const separador =
             document.createElement(
               "span"
             );
 
-          separador.textContent = "›";
+
+          separador.textContent =
+            "›";
+
 
           const boton =
             document.createElement(
               "button"
             );
 
-          boton.type = "button";
+
+          boton.type =
+            "button";
+
 
           boton.textContent =
             paso.nombre;
 
+
           boton.addEventListener(
             "click",
             () => {
+
               pasos =
                 pasos.slice(
                   0,
                   indice + 1
                 );
 
-              $("buscar").value = "";
+
+              $("buscar").value =
+                "";
+
+
+              documentosActuales =
+                [];
+
 
               dibujar();
+
             }
           );
+
 
           $("ruta").append(
             separador,
             boton
           );
+
         }
       );
+
     }
 
-    function listarCarpetas(filas) {
-      const ids = new Set(
-        filas.map(
-          (f) =>
-            String(f.id_carpeta)
-        )
-      );
 
-      const principales =
-        filas.filter((f) =>
-          f.id_carpeta_padre == null ||
-          !ids.has(
-            String(
-              f.id_carpeta_padre
-            )
+    function listarCarpetas(
+      filas
+    ) {
+
+      const ids =
+        new Set(
+          filas.map(
+            (f) =>
+              String(
+                f.id_carpeta
+              )
           )
         );
+
+
+      const principales =
+        filas.filter(
+          (f) =>
+            f.id_carpeta_padre == null ||
+            !ids.has(
+              String(
+                f.id_carpeta_padre
+              )
+            )
+        );
+
 
       for (
         const carpeta
         of principales
       ) {
+
         tarjeta(
           carpeta.nombre_carpeta,
           "Abrir carpeta",
           () => abrir({
-            tipo: "carpeta",
-            id: carpeta.id_carpeta,
+            tipo:
+              "carpeta",
+
+            id:
+              carpeta.id_carpeta,
+
             nombre:
               carpeta.nombre_carpeta
           })
         );
+
       }
+
 
       if (
         !principales.length
       ) {
+
         $("descripcion")
           .textContent =
           "Todavía no hay carpetas disponibles en esta ubicación.";
+
       }
+
     }
+
 
     function seleccionarDocumentos(
       ids
     ) {
+
       const permitidas =
         new Set(
-          ids.map(String)
-        );
-
-      documentosActuales =
-        documentos.filter((d) =>
-          permitidas.has(
-            String(
-              d.id_carpeta
-            )
+          ids.map(
+            String
           )
         );
+
+
+      documentosActuales =
+        documentos.filter(
+          (documento) =>
+            permitidas.has(
+              String(
+                documento.id_carpeta
+              )
+            )
+        );
+
 
       $("documentos").hidden =
         false;
 
+
       mostrarDocumentos();
+
     }
 
+
     function dibujar() {
+
       $("carpetas")
         .replaceChildren();
+
 
       $("documentos").hidden =
         true;
 
+
       $("descripcion")
-        .textContent = "";
+        .textContent =
+        "";
+
+
+      $("contador")
+        .textContent =
+        "";
+
+
+      documentosActuales =
+        [];
+
+
+      actualizarBotonAtras();
+
 
       dibujarRuta();
+
 
       const actual =
         pasos[
           pasos.length - 1
         ];
 
+
       $("titulo").textContent =
         actual
           ? actual.nombre
           : "Organización documental";
 
+
+      /*
+       * PÁGINA PRINCIPAL
+       */
+
       if (!actual) {
+
+        // Por seguridad se vuelve a ocultar aquí.
+        $("atras").style.display =
+          "none";
+
+
         $("descripcion")
           .textContent =
           "Selecciona una sección. Se respetan tus permisos actuales.";
+
 
         for (
           const seccion
           of secciones
         ) {
+
           tarjeta(
             seccion.nombre,
             "Abrir sección",
             () => abrir({
-              tipo: "seccion",
-              id: seccion.clave,
+              tipo:
+                "seccion",
+
+              id:
+                seccion.clave,
+
               nombre:
                 seccion.nombre
             })
           );
+
         }
 
+
         return;
+
       }
+
+
+      /*
+       * SECCIÓN
+       */
 
       if (
         actual.tipo ===
         "seccion"
       ) {
+
         const filas =
           carpetas.filter(
             (c) =>
@@ -679,13 +990,20 @@
               actual.id
           );
 
+
+        /*
+         * LOGÍSTICA
+         */
+
         if (
           actual.id ===
           "logistica"
         ) {
+
           $("descripcion")
             .textContent =
             "Logística se mantiene como una sola carpeta por ahora.";
+
 
           seleccionarDocumentos(
             filas.map(
@@ -694,13 +1012,21 @@
             )
           );
 
+
           return;
+
         }
+
+
+        /*
+         * SERVICIOS Y PROYECTOS
+         */
 
         if (
           actual.id ===
           "servicios"
         ) {
+
           const ordenClientes = [
             "Volcan",
             "NEXA",
@@ -713,44 +1039,83 @@
             "OTROS"
           ];
 
+
           const clientesOrdenados =
             [...clientes].sort(
               (a, b) => {
+
                 const posicionA =
-                  ordenClientes
-                    .indexOf(
-                      a.nombre_cliente
-                    );
+                  ordenClientes.indexOf(
+                    a.nombre_cliente
+                  );
+
 
                 const posicionB =
-                  ordenClientes
-                    .indexOf(
-                      b.nombre_cliente
-                    );
+                  ordenClientes.indexOf(
+                    b.nombre_cliente
+                  );
 
-                return (
-                  posicionA -
-                  posicionB
+
+                const ordenA =
+                  posicionA === -1
+                    ? 999
+                    : posicionA;
+
+
+                const ordenB =
+                  posicionB === -1
+                    ? 999
+                    : posicionB;
+
+
+                if (
+                  ordenA !==
+                  ordenB
+                ) {
+
+                  return (
+                    ordenA -
+                    ordenB
+                  );
+
+                }
+
+
+                return String(
+                  a.nombre_cliente
+                ).localeCompare(
+                  String(
+                    b.nombre_cliente
+                  ),
+                  "es"
                 );
+
               }
             );
+
 
           for (
             const cliente
             of clientesOrdenados
           ) {
+
             tarjeta(
               cliente.nombre_cliente,
               "Ver unidades",
               () => abrir({
-                tipo: "cliente",
+                tipo:
+                  "cliente",
+
                 id:
                   cliente.id_cliente,
+
                 nombre:
                   cliente.nombre_cliente
               })
             );
+
           }
+
 
           const sinCliente =
             filas.filter(
@@ -759,74 +1124,112 @@
                 null
             );
 
+
           if (
             sinCliente.length
           ) {
+
             tarjeta(
               "Pendientes de clasificación",
               "Carpetas y proyectos existentes sin cliente o unidad",
               () => abrir({
                 tipo:
                   "pendientes",
+
                 nombre:
                   "Pendientes de clasificación"
               })
             );
+
           }
 
+
           return;
+
         }
 
-        listarCarpetas(filas);
+
+        /*
+         * DEMÁS SECCIONES
+         */
+
+        listarCarpetas(
+          filas
+        );
+
 
         return;
+
       }
+
+
+      /*
+       * CLIENTE
+       */
 
       if (
         actual.tipo ===
         "cliente"
       ) {
+
         const unidadesCliente =
           unidades.filter(
-            (u) =>
+            (unidad) =>
               mismo(
-                u.id_cliente,
+                unidad.id_cliente,
                 actual.id
               )
           );
+
 
         for (
           const unidad
           of unidadesCliente
         ) {
+
           tarjeta(
             unidad.nombre_unidad,
             "Ver proyectos",
             () => abrir({
-              tipo: "unidad",
+              tipo:
+                "unidad",
+
               id:
                 unidad.id_unidad,
+
               nombre:
                 unidad.nombre_unidad
             })
           );
+
         }
+
 
         if (
           !unidadesCliente.length
         ) {
+
           $("descripcion")
             .textContent =
             "Este cliente todavía no tiene unidades registradas.";
+
         }
 
+
         return;
+
       }
+
+
+      /*
+       * UNIDAD
+       */
 
       if (
         actual.tipo ===
         "unidad"
       ) {
+
         const filas =
           carpetas.filter(
             (c) =>
@@ -836,6 +1239,7 @@
               )
           );
 
+
         const proyectos =
           grupos(
             filas,
@@ -843,37 +1247,55 @@
             "nombre_proyecto"
           );
 
+
         for (
           const proyecto
           of proyectos
         ) {
+
           tarjeta(
             proyecto.nombre,
             "Ver carpetas",
             () => abrir({
-              tipo: "proyecto",
-              id: proyecto.id,
+              tipo:
+                "proyecto",
+
+              id:
+                proyecto.id,
+
               nombre:
                 proyecto.nombre
             })
           );
+
         }
+
 
         if (
           !proyectos.length
         ) {
+
           $("descripcion")
             .textContent =
             "Esta unidad todavía no tiene proyectos registrados.";
+
         }
 
+
         return;
+
       }
+
+
+      /*
+       * PROYECTO
+       */
 
       if (
         actual.tipo ===
         "proyecto"
       ) {
+
         const delProyecto =
           carpetas.filter(
             (c) =>
@@ -883,6 +1305,7 @@
               )
           );
 
+
         const principales =
           delProyecto.filter(
             (c) =>
@@ -890,12 +1313,15 @@
               null
           );
 
+
         if (
           principales.length ===
           1
         ) {
+
           const principal =
             principales[0];
+
 
           const categorias =
             delProyecto.filter(
@@ -906,42 +1332,62 @@
                 )
             );
 
+
           for (
             const categoria
             of categorias
           ) {
+
             tarjeta(
               categoria.nombre_carpeta,
               "Abrir categoría",
               () => abrir({
-                tipo: "carpeta",
+                tipo:
+                  "carpeta",
+
                 id:
                   categoria.id_carpeta,
+
                 nombre:
                   categoria.nombre_carpeta
               })
             );
+
           }
+
 
           seleccionarDocumentos([
             principal.id_carpeta
           ]);
+
+
         } else {
+
           listarCarpetas(
             delProyecto
           );
+
         }
 
+
         return;
+
       }
+
+
+      /*
+       * PENDIENTES
+       */
 
       if (
         actual.tipo ===
         "pendientes"
       ) {
+
         $("descripcion")
           .textContent =
           "Estos registros conservan su ubicación y permisos actuales.";
+
 
         listarCarpetas(
           carpetas.filter(
@@ -953,13 +1399,21 @@
           )
         );
 
+
         return;
+
       }
+
+
+      /*
+       * CARPETA
+       */
 
       if (
         actual.tipo ===
         "carpeta"
       ) {
+
         const hijas =
           carpetas.filter(
             (c) =>
@@ -969,32 +1423,47 @@
               )
           );
 
+
         for (
           const hija
           of hijas
         ) {
+
           tarjeta(
             hija.nombre_carpeta,
             "Abrir subcarpeta",
             () => abrir({
-              tipo: "carpeta",
+              tipo:
+                "carpeta",
+
               id:
                 hija.id_carpeta,
+
               nombre:
                 hija.nombre_carpeta
             })
           );
+
         }
+
 
         seleccionarDocumentos([
           actual.id
         ]);
+
+
+        return;
+
       }
+
     }
 
+
     function mostrarDocumentos() {
+
       $("filas")
         .replaceChildren();
+
 
       const termino =
         normalizar(
@@ -1003,70 +1472,100 @@
             .trim()
         );
 
+
       const visibles =
-        documentosActuales
-          .filter((d) =>
-            normalizar([
-              d.nombre_archivo,
-              d.subido_por,
-              d.estado_documento
-            ].join(" "))
-              .includes(
-                termino
-              )
-          );
+        documentosActuales.filter(
+          (documento) => {
+
+            const texto =
+              normalizar([
+                documento.nombre_archivo,
+                documento.descripcion,
+                documento.subido_por,
+                documento.estado_documento
+              ].join(" "));
+
+
+            return texto.includes(
+              termino
+            );
+
+          }
+        );
+
 
       $("contador")
         .textContent =
         visibles.length +
         " documento(s) encontrado(s).";
 
+
       if (
         !visibles.length
       ) {
+
         const fila =
           document.createElement(
             "tr"
           );
+
 
         const celda =
           document.createElement(
             "td"
           );
 
-        celda.colSpan = 5;
+
+        celda.colSpan =
+          5;
+
 
         celda.textContent =
-          "No hay documentos para mostrar.";
+          termino
+            ? "No se encontraron documentos con esa búsqueda."
+            : "No hay documentos para mostrar.";
+
 
         fila.appendChild(
           celda
         );
 
+
         $("filas")
-          .appendChild(fila);
+          .appendChild(
+            fila
+          );
+
 
         return;
+
       }
+
 
       for (
         const documento
         of visibles
       ) {
+
         const fila =
           document.createElement(
             "tr"
           );
+
 
         const fecha =
           new Date(
             documento.fecha_subida
           );
 
+
         const valores = [
-          documento.nombre_archivo,
+          documento.nombre_archivo ||
+            "Sin nombre",
+
           documento.subido_por ||
             "Sin registro",
+
           documento.fecha_subida &&
           !Number.isNaN(
             fecha.getTime()
@@ -1081,83 +1580,106 @@
             : "Sin fecha"
         ];
 
+
         for (
           const valor
           of valores
         ) {
+
           const celda =
             document.createElement(
               "td"
             );
 
+
           celda.textContent =
             valor;
+
 
           fila.appendChild(
             celda
           );
+
         }
+
 
         const estadoCelda =
           document.createElement(
             "td"
           );
 
+
         const estado =
           document.createElement(
             "span"
           );
 
+
         const nombreEstado =
           documento.estado_documento ||
           "Sin estado";
+
 
         const clase =
           normalizar(
             nombreEstado
           ).trim();
 
+
         estado.className =
           "estado";
+
 
         if (
           [
             "aprobado",
             "pendiente",
             "rechazado"
-          ].includes(clase)
+          ].includes(
+            clase
+          )
         ) {
+
           estado.classList.add(
             clase
           );
+
         }
+
 
         estado.textContent =
           nombreEstado;
+
 
         estadoCelda.appendChild(
           estado
         );
 
+
         fila.appendChild(
           estadoCelda
         );
+
 
         const accion =
           document.createElement(
             "td"
           );
 
+
         const enlace =
           document.createElement(
             "a"
           );
 
+
         enlace.className =
           "boton";
 
+
         enlace.textContent =
           "Ver PDF";
+
 
         enlace.href =
           "/documentos/" +
@@ -1166,92 +1688,151 @@
           ) +
           "/ver";
 
+
         enlace.target =
           "_blank";
 
+
         enlace.rel =
           "noopener noreferrer";
+
 
         accion.appendChild(
           enlace
         );
 
+
         fila.appendChild(
           accion
         );
 
+
         $("filas")
-          .appendChild(fila);
+          .appendChild(
+            fila
+          );
+
       }
+
     }
 
+
     async function cargar() {
-      if (cargando) {
+
+      if (
+        cargando
+      ) {
+
         return;
+
       }
 
-      cargando = true;
+
+      cargando =
+        true;
+
 
       $("actualizar")
-        .disabled = true;
+        .disabled =
+        true;
+
 
       $("mensaje")
         .textContent =
         "Cargando carpetas y documentos...";
 
+
       $("carpetas")
         .replaceChildren();
 
+
       $("documentos")
-        .hidden = true;
+        .hidden =
+        true;
+
 
       $("ruta")
         .replaceChildren();
 
+
+      // Mientras carga estamos en la raíz.
+      $("atras").style.display =
+        "none";
+
+
       try {
+
         const organizacion =
           await consultar(
             "/documentos/organizacion"
           );
 
-        const archivos = [];
 
-        let completa = false;
+        const archivos =
+          [];
+
+
+        let completa =
+          false;
+
 
         for (
           let pagina = 1;
           pagina <= 100;
           pagina++
         ) {
+
           const datos =
             await consultar(
               "/documentos?pagina=" +
               pagina
             );
 
-          archivos.push(
-            ...datos.documentos
-          );
+
+          if (
+            Array.isArray(
+              datos.documentos
+            )
+          ) {
+
+            archivos.push(
+              ...datos.documentos
+            );
+
+          }
+
 
           if (
             !datos.hay_mas
           ) {
-            completa = true;
+
+            completa =
+              true;
+
             break;
+
           }
+
 
           $("mensaje")
             .textContent =
             "Cargando documentos: " +
             archivos.length +
             "...";
+
         }
 
-        if (!completa) {
+
+        if (
+          !completa
+        ) {
+
           throw new Error(
             "Hay más de 10000 documentos. Debe habilitarse la consulta por carpeta antes de mostrar este explorador."
           );
+
         }
+
 
         secciones =
           Array.isArray(
@@ -1260,12 +1841,14 @@
             ? organizacion.secciones
             : [];
 
+
         clientes =
           Array.isArray(
             organizacion.clientes
           )
             ? organizacion.clientes
             : [];
+
 
         unidades =
           Array.isArray(
@@ -1274,6 +1857,7 @@
             ? organizacion.unidades
             : [];
 
+
         carpetas =
           Array.isArray(
             organizacion.carpetas
@@ -1281,33 +1865,59 @@
             ? organizacion.carpetas
             : [];
 
+
         documentos =
           archivos;
 
-        pasos = [];
+
+        documentosActuales =
+          [];
+
+
+        pasos =
+          [];
+
 
         $("buscar").value =
           "";
 
+
         dibujar();
+
 
         $("mensaje")
           .textContent =
           "Organización cargada. Esta vista no mueve archivos en Drive.";
 
+
       } catch (error) {
+
+        console.error(
+          "Error cargando archivo documental:",
+          error
+        );
+
+
         $("mensaje")
           .textContent =
           error.message ||
           "No se pudo cargar la organización.";
 
+
       } finally {
-        cargando = false;
+
+        cargando =
+          false;
+
 
         $("actualizar")
-          .disabled = false;
+          .disabled =
+          false;
+
       }
+
     }
+
 
     $("buscar")
       .addEventListener(
@@ -1315,11 +1925,20 @@
         mostrarDocumentos
       );
 
+
+    $("atras")
+      .addEventListener(
+        "click",
+        volverAtras
+      );
+
+
     $("actualizar")
       .addEventListener(
         "click",
         cargar
       );
+
 
     $("salir")
       .addEventListener(
@@ -1327,23 +1946,37 @@
         cerrarSesion
       );
 
+
     async function iniciar() {
+
       try {
+
         const usuario =
           await verificarSesion();
 
-        if (!usuario) {
+
+        if (
+          !usuario
+        ) {
+
           return;
+
         }
 
+
         const paneles = {
+
           Administrador:
             "/admin.html",
+
           Supervisor:
             "/supervisor.html",
+
           Usuario:
             "/usuario.html"
+
         };
+
 
         $("volver").href =
           paneles[
@@ -1351,16 +1984,31 @@
           ] ||
           "/login.html";
 
+
         await cargar();
 
-      } catch {
+
+      } catch (error) {
+
+        console.error(
+          "Error comprobando sesión:",
+          error
+        );
+
+
         $("mensaje")
           .textContent =
           "No se pudo comprobar la sesión. Actualiza la página.";
+
       }
+
     }
 
+
     iniciar();
+
   </script>
+
 </body>
+
 </html>

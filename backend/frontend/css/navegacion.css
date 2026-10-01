@@ -1,0 +1,347 @@
+/* =========================================================
+   NAVEGACIÓN GLOBAL COEMSA
+   ========================================================= */
+
+#coemsa-nav-global {
+  position: sticky;
+  top: 0;
+  z-index: 9999;
+
+  width: 100%;
+
+  background:
+    linear-gradient(
+      135deg,
+      #123454 0%,
+      #1e527b 100%
+    );
+
+  color: white;
+
+  box-shadow:
+    0 4px 16px rgba(15, 52, 84, 0.18);
+}
+
+#coemsa-nav-global * {
+  box-sizing: border-box;
+}
+
+.coemsa-nav-contenido {
+  max-width: 1500px;
+
+  margin: 0 auto;
+
+  padding:
+    11px
+    24px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 18px;
+}
+
+.coemsa-marca {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  flex-shrink: 0;
+
+  color: white;
+
+  text-decoration: none;
+
+  font-family:
+    Arial,
+    sans-serif;
+
+  font-size: 17px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.2px;
+}
+
+.coemsa-marca:hover {
+  opacity: 0.92;
+}
+
+.coemsa-marca-icono {
+  font-size: 22px;
+}
+
+.coemsa-menu {
+  display: flex;
+
+  align-items: center;
+
+  flex-wrap: wrap;
+
+  gap: 4px;
+
+  flex: 1;
+}
+
+.coemsa-menu a {
+  display: inline-flex;
+
+  align-items: center;
+
+  min-height: 42px;
+
+  padding:
+    9px
+    13px;
+
+  border-radius: 8px;
+
+  color:
+    #eaf4fb;
+
+  text-decoration: none;
+
+  font-family:
+    Arial,
+    sans-serif;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  transition:
+    background 0.16s ease,
+    color 0.16s ease,
+    transform 0.16s ease;
+}
+
+.coemsa-menu a:hover {
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.12
+    );
+
+  color: white;
+}
+
+.coemsa-menu a.activo {
+  background: white;
+
+  color: #173a5b;
+
+  box-shadow:
+    0 2px 8px
+    rgba(
+      0,
+      0,
+      0,
+      0.08
+    );
+}
+
+.coemsa-menu a:focus-visible,
+.coemsa-marca:focus-visible,
+.coemsa-cerrar:focus-visible {
+  outline:
+    3px solid
+    #f0b429;
+
+  outline-offset:
+    2px;
+}
+
+.coemsa-cuenta {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  margin-left: auto;
+
+  flex-shrink: 0;
+}
+
+.coemsa-usuario {
+  max-width: 180px;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+
+  color:
+    #d9eaf7;
+
+  font-family:
+    Arial,
+    sans-serif;
+
+  font-size: 13px;
+}
+
+.coemsa-cerrar {
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.65
+    );
+
+  border-radius: 8px;
+
+  background:
+    transparent;
+
+  color: white;
+
+  padding:
+    9px
+    13px;
+
+  font:
+    600 13px
+    Arial,
+    sans-serif;
+
+  cursor: pointer;
+
+  white-space: nowrap;
+}
+
+.coemsa-cerrar:hover {
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.14
+    );
+}
+
+
+/* =========================================================
+   OCULTAR NAVEGACIÓN ANTIGUA SOLAMENTE CUANDO
+   LA NAVEGACIÓN GLOBAL SE CARGÓ CORRECTAMENTE
+   ========================================================= */
+
+body.coemsa-nav-activa
+#accesos-documentales-coemsa {
+  display: none !important;
+}
+
+body.coemsa-nav-activa
+header nav {
+  display: none !important;
+}
+
+body.coemsa-nav-activa
+header > a {
+  display: none !important;
+}
+
+
+/* Botones antiguos de cerrar sesión */
+
+body.coemsa-nav-activa
+.btn-cerrar-sesion,
+
+body.coemsa-nav-activa
+header #salir,
+
+body.coemsa-nav-activa
+header #btnSalir {
+  display: none !important;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media
+(max-width: 1100px) {
+
+  .coemsa-nav-contenido {
+    flex-wrap: wrap;
+
+    gap: 8px 14px;
+  }
+
+  .coemsa-menu {
+    order: 3;
+
+    width: 100%;
+  }
+
+  .coemsa-cuenta {
+    margin-left: auto;
+  }
+}
+
+
+@media
+(max-width: 700px) {
+
+  .coemsa-nav-contenido {
+    padding:
+      10px
+      14px;
+  }
+
+  .coemsa-marca {
+    font-size: 15px;
+  }
+
+  .coemsa-usuario {
+    display: none;
+  }
+
+  .coemsa-menu {
+    display: grid;
+
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(
+          0,
+          1fr
+        )
+      );
+
+    gap: 5px;
+  }
+
+  .coemsa-menu a {
+    justify-content: center;
+
+    text-align: center;
+  }
+}
+
+
+@media
+(max-width: 420px) {
+
+  .coemsa-menu {
+    grid-template-columns:
+      1fr;
+  }
+
+  .coemsa-cuenta {
+    width: 100%;
+  }
+
+  .coemsa-cerrar {
+    width: 100%;
+  }
+}
