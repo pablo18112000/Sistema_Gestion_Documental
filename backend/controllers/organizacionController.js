@@ -48,6 +48,29 @@ exports.consultar = async (req, res) => {
     const esAdministrador =
       usuario.nombre_rol === "Administrador";
 
+    // Los clientes y las unidades se consultan directamente.
+    // Así aparecen aunque todavía no tengan proyectos o carpetas.
+    const [clientes] = await pool.query(`
+      SELECT
+        id_cliente,
+        nombre_cliente,
+        estado
+      FROM clientes
+      WHERE estado = 1
+      ORDER BY id_cliente
+    `);
+
+    const [unidades] = await pool.query(`
+      SELECT
+        id_unidad,
+        id_cliente,
+        nombre_unidad,
+        estado
+      FROM unidades_clientes
+      WHERE estado = 1
+      ORDER BY id_cliente, id_unidad
+    `);
+
     const parametros = [
       esAdministrador ? 1 : 0,
       usuario.id_usuario,
@@ -77,26 +100,11 @@ exports.consultar = async (req, res) => {
         )
       `;
 
-      parametros.push(usuario.id_usuario, usuario.id_area);
+      parametros.push(
+        usuario.id_usuario,
+        usuario.id_area
+      );
     }
-
-    // Clientes principales activos.
-    // Se consultan directamente para que aparezcan aunque
-    // todavía no tengan unidades, proyectos o carpetas.
-    const [clientes] = await pool.query(`
-      SELECT
-        id_cliente,
-        nombre_cliente,
-        estado
-      FROM clientes
-      WHERE estado = 1
-      ORDER BY
-        CASE
-          WHEN UPPER(nombre_cliente) = 'VOLCAN' THEN 0
-          ELSE 1
-        END,
-        nombre_cliente
-    `);
 
     const [filas] = await pool.query(`
       SELECT
@@ -166,32 +174,34 @@ exports.consultar = async (req, res) => {
     }
 
     const carpetas = filas.map((fila) => {
-      // Los proyectos se presentan en Servicios y Proyectos,
-      // aunque un registro antiguo tenga otra área.
-      // Esto no cambia sus permisos ni su área en MySQL.
-      const seccion = fila.id_proyecto !== null
-        ? "servicios"
-        : secciones.find((item) =>
-            item.areas.includes(Number(fila.id_area))
-          )?.clave || "sin_clasificar";
+      const seccion =
+        fila.id_proyecto !== null
+          ? "servicios"
+          : secciones.find((item) =>
+              item.areas.includes(Number(fila.id_area))
+            )?.clave || "sin_clasificar";
 
       return {
         id_carpeta: fila.id_carpeta,
         nombre_carpeta: fila.nombre_carpeta,
         id_carpeta_padre: fila.id_carpeta_padre,
+
         id_servicio: fila.id_servicio,
+
         id_area: fila.id_area,
         nombre_area: fila.nombre_area,
+
         id_proyecto: fila.id_proyecto,
         nombre_proyecto: fila.nombre_proyecto,
+
         id_cliente: fila.id_cliente,
         nombre_cliente: fila.nombre_cliente,
+
         id_unidad: fila.id_unidad,
         nombre_unidad: fila.nombre_unidad,
+
         seccion,
 
-        // El controlador actual todavía permite subir
-        // únicamente a carpetas principales.
         puede_subir:
           Number(fila.permiso_subida) === 1 &&
           fila.id_carpeta_padre === null
@@ -206,9 +216,16 @@ exports.consultar = async (req, res) => {
           carpeta.seccion === seccion.clave
         )
       )
-      .map(({ clave, nombre }) => ({ clave, nombre }));
+      .map(({ clave, nombre }) => ({
+        clave,
+        nombre
+      }));
 
-    if (carpetas.some((c) => c.seccion === "sin_clasificar")) {
+    if (
+      carpetas.some(
+        (c) => c.seccion === "sin_clasificar"
+      )
+    ) {
       disponibles.push({
         clave: "sin_clasificar",
         nombre: "Pendientes de clasificación"
@@ -219,8 +236,10 @@ exports.consultar = async (req, res) => {
       success: true,
       secciones: disponibles,
       clientes,
+      unidades,
       carpetas
     });
+
   } catch (error) {
     console.error(
       "Error consultando organización:",
@@ -229,18 +248,22 @@ exports.consultar = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      mensaje: "No se pudo cargar la organización de carpetas."
+      mensaje:
+        "No se pudo cargar la organización de carpetas."
     });
   }
 };
 
 // Búsqueda general para las cuentas activas autorizadas por la ruta.
 exports.buscarGeneral = async (req, res) => {
-  const termino = typeof req.query.q === "string"
-    ? req.query.q.trim()
-    : "";
+  const termino =
+    typeof req.query.q === "string"
+      ? req.query.q.trim()
+      : "";
 
-  const pagina = Number(req.query.pagina || 1);
+  const pagina = Number(
+    req.query.pagina || 1
+  );
 
   if (
     termino.length < 2 ||
@@ -251,7 +274,8 @@ exports.buscarGeneral = async (req, res) => {
   ) {
     return res.status(400).json({
       success: false,
-      mensaje: "Escribe entre 2 y 150 caracteres y una página válida."
+      mensaje:
+        "Escribe entre 2 y 150 caracteres y una página válida."
     });
   }
 
@@ -268,16 +292,28 @@ exports.buscarGeneral = async (req, res) => {
         a.nombre_area,
         cl.nombre_cliente,
         uc.nombre_unidad,
-        CONCAT_WS(' ', u.nombre, u.apellido) AS subido_por
+        CONCAT_WS(
+          ' ',
+          u.nombre,
+          u.apellido
+        ) AS subido_por
       FROM documentos d
       LEFT JOIN carpetas_documentos c
         ON c.id_carpeta = d.id_carpeta
       LEFT JOIN servicios_proyectos s
         ON s.id_servicio = c.id_servicio
       LEFT JOIN proyectos p
-        ON p.id_proyecto = COALESCE(d.id_proyecto, s.id_proyecto)
+        ON p.id_proyecto =
+          COALESCE(
+            d.id_proyecto,
+            s.id_proyecto
+          )
       LEFT JOIN areas a
-        ON a.id_area = COALESCE(d.id_area, s.id_area)
+        ON a.id_area =
+          COALESCE(
+            d.id_area,
+            s.id_area
+          )
       LEFT JOIN proyecto_unidad pu
         ON pu.id_proyecto = p.id_proyecto
       LEFT JOIN unidades_clientes uc
@@ -287,23 +323,31 @@ exports.buscarGeneral = async (req, res) => {
       LEFT JOIN usuarios u
         ON u.id_usuario = d.id_usuario
       WHERE INSTR(
-        LOWER(CONCAT_WS(' ',
-          d.nombre_archivo,
-          d.descripcion,
-          d.estado_documento,
-          c.nombre_carpeta,
-          p.nombre_proyecto,
-          a.nombre_area,
-          cl.nombre_cliente,
-          uc.nombre_unidad,
-          u.nombre,
-          u.apellido
-        )),
+        LOWER(
+          CONCAT_WS(
+            ' ',
+            d.nombre_archivo,
+            d.descripcion,
+            d.estado_documento,
+            c.nombre_carpeta,
+            p.nombre_proyecto,
+            a.nombre_area,
+            cl.nombre_cliente,
+            uc.nombre_unidad,
+            u.nombre,
+            u.apellido
+          )
+        ),
         LOWER(?)
       ) > 0
-      ORDER BY d.fecha_subida DESC, d.id_documento DESC
+      ORDER BY
+        d.fecha_subida DESC,
+        d.id_documento DESC
       LIMIT 101 OFFSET ?
-    `, [termino, (pagina - 1) * 100]);
+    `, [
+      termino,
+      (pagina - 1) * 100
+    ]);
 
     return res.json({
       success: true,
@@ -311,6 +355,7 @@ exports.buscarGeneral = async (req, res) => {
       pagina,
       hay_mas: filas.length > 100
     });
+
   } catch (error) {
     console.error(
       "Error búsqueda general:",
@@ -319,7 +364,8 @@ exports.buscarGeneral = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      mensaje: "No se pudo completar la búsqueda."
+      mensaje:
+        "No se pudo completar la búsqueda."
     });
   }
 };
