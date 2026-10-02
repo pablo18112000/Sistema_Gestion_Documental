@@ -14,7 +14,12 @@ const {
   limiteLogin
 } = require("../seguridad/limites");
 
+const {
+  obtenerTokenCSRF
+} = require("../seguridad/csrf");
+
 const router = express.Router();
+
 
 // =====================================
 // LOGIN
@@ -27,6 +32,7 @@ router.post(
   limiteLogin,
   usuarioController.login
 );
+
 
 // =====================================
 // CERRAR SESIÓN
@@ -51,6 +57,7 @@ router.post(
       });
     }
 
+
     req.session.destroy(
       (error) => {
 
@@ -67,12 +74,14 @@ router.post(
           });
         }
 
+
         res.clearCookie(
           "coemsa.sid",
           {
             path: "/"
           }
         );
+
 
         return res.json({
           success: true,
@@ -83,8 +92,10 @@ router.post(
   }
 );
 
+
 // =====================================
 // CONSULTAR EL USUARIO AUTENTICADO
+// Y ENTREGAR TOKEN CSRF DE LA SESIÓN
 // =====================================
 
 router.get(
@@ -92,12 +103,34 @@ router.get(
   verificarSesion,
   (req, res) => {
 
+    const csrfToken =
+      obtenerTokenCSRF(req);
+
+
+    if (!csrfToken) {
+
+      return res.status(503).json({
+        success: false,
+        mensaje:
+          "No se pudo preparar la seguridad de la sesión."
+      });
+    }
+
+
+    res.set(
+      "Cache-Control",
+      "no-store"
+    );
+
+
     return res.json({
       success: true,
-      usuario: req.usuario
+      usuario: req.usuario,
+      csrfToken
     });
   }
 );
+
 
 // =====================================
 // DESDE AQUÍ: SOLO ADMINISTRADORES
@@ -110,6 +143,7 @@ router.use(
   )
 );
 
+
 // =====================================
 // LISTAR USUARIOS
 // =====================================
@@ -118,6 +152,7 @@ router.get(
   "/",
   usuarioController.listarUsuarios
 );
+
 
 // =====================================
 // CREAR USUARIO
@@ -128,6 +163,7 @@ router.post(
   usuarioController.crearUsuario
 );
 
+
 // =====================================
 // EDITAR USUARIO
 // =====================================
@@ -137,6 +173,7 @@ router.put(
   usuarioController.editarUsuario
 );
 
+
 // =====================================
 // ACTIVAR / DESACTIVAR USUARIO
 // =====================================
@@ -145,6 +182,7 @@ router.put(
   "/estado/:id",
   usuarioController.cambiarEstado
 );
+
 
 // =====================================
 // PRUEBA DE RUTA PROTEGIDA
@@ -161,5 +199,6 @@ router.get(
     });
   }
 );
+
 
 module.exports = router;

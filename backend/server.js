@@ -26,6 +26,11 @@ const cabecerasSeguras =
   require(
     "./seguridad/cabeceras"
   );
+const {
+  protegerCSRF
+} = require(
+  "./seguridad/csrf"
+);
 
 const rutasUsuarios =
   require(
@@ -135,7 +140,13 @@ app.use(
 app.use(
   sessionMiddleware
 );
+// =====================================
+// PROTECCIÓN CSRF
+// =====================================
 
+app.use(
+  protegerCSRF
+);
 // =====================================
 // ESTADO DEL SERVIDOR
 // =====================================
