@@ -26,5 +26,8 @@
     "googleapis": "^182.0.0",
     "multer": "^2.4.0",
     "mysql2": "^3.24.4"
+  },
+  "overrides": {
+    "mysql2": "$mysql2"
   }
 }
