@@ -1,42 +1,62 @@
 "use strict";
 
-const path = require("path");
+const path =
+  require("path");
 
 require("dotenv").config({
-  path: path.join(__dirname, ".env")
+  path: path.join(
+    __dirname,
+    ".env"
+  )
 });
 
-const express = require("express");
+const express =
+  require("express");
 
-require("./config/db");
+require(
+  "./config/db"
+);
 
 const sessionMiddleware =
-  require("./config/session");
+  require(
+    "./config/session"
+  );
+
+const cabecerasSeguras =
+  require(
+    "./seguridad/cabeceras"
+  );
 
 const rutasUsuarios =
-  require("./routes/usuarios");
+  require(
+    "./routes/usuarios"
+  );
 
 const rutasDocumentos =
-  require("./routes/documentos");
+  require(
+    "./routes/documentos"
+  );
 
 const rutasAprobaciones =
-  require("./routes/aprobaciones");
+  require(
+    "./routes/aprobaciones"
+  );
 
 const rutasAsignaciones =
-  require("./routes/asignaciones");
+  require(
+    "./routes/asignaciones"
+  );
 
 const rutasProyectos =
-  require("./routes/proyectos");
+  require(
+    "./routes/proyectos"
+  );
 
 const rutasArchivos =
-  require("./routes/archivos");
+  require(
+    "./routes/archivos"
+  );
 
-/*
- * NUEVA RUTA:
- * creación de carpetas y subcarpetas
- * exclusivamente para Administración
- * y Recursos Humanos.
- */
 const rutasCarpetasAdministracionRRHH =
   require(
     "./routes/carpetasAdministracionRRHH"
@@ -47,12 +67,15 @@ const rutasCarpetasServiciosProyectos =
     "./routes/carpetasServiciosProyectos"
   );
 
-const app = express();
+const app =
+  express();
 
 const produccion =
-  process.env.NODE_ENV === "production" ||
+  process.env.NODE_ENV ===
+    "production" ||
   Boolean(
-    process.env.RAILWAY_ENVIRONMENT_ID
+    process.env
+      .RAILWAY_ENVIRONMENT_ID
   );
 
 const carpetaFrontend =
@@ -62,19 +85,35 @@ const carpetaFrontend =
   );
 
 // =====================================
-// CONFIGURACIÓN
+// CONFIGURACIÓN GENERAL
 // =====================================
 
 app.disable(
   "x-powered-by"
 );
 
+// Railway trabaja detrás de proxy.
+// Esto permite reconocer correctamente
+// HTTPS e IP del cliente en producción.
 if (produccion) {
+
   app.set(
     "trust proxy",
     1
   );
 }
+
+// =====================================
+// CABECERAS DE SEGURIDAD
+// =====================================
+
+app.use(
+  cabecerasSeguras
+);
+
+// =====================================
+// PARSEO DE SOLICITUDES
+// =====================================
 
 app.use(
   express.json({
@@ -88,6 +127,10 @@ app.use(
     limit: "1mb"
   })
 );
+
+// =====================================
+// SESIONES
+// =====================================
 
 app.use(
   sessionMiddleware
@@ -106,7 +149,7 @@ app.get(
       "no-store"
     );
 
-    res.json({
+    return res.json({
       success: true,
       mensaje:
         "Servidor Gestión Documental COEMSA activo."
@@ -174,15 +217,6 @@ app.use(
   rutasArchivos
 );
 
-/*
- * Crear carpetas/subcarpetas dentro de
- * Administración y Recursos Humanos.
- *
- * Ruta final:
- *
- * POST
- * /carpetas-administracion-rrhh/:idPadre
- */
 app.use(
   "/carpetas-administracion-rrhh",
   rutasCarpetasAdministracionRRHH
@@ -206,9 +240,8 @@ app.use(
       "no-store"
     );
 
-    res.status(403).json({
+    return res.status(403).json({
       success: false,
-
       mensaje:
         "El acceso directo está deshabilitado. " +
         "Utiliza el visor de documentos con tu sesión."
@@ -229,7 +262,7 @@ app.get(
       "no-store"
     );
 
-    res.sendFile(
+    return res.sendFile(
       path.join(
         carpetaFrontend,
         "login.html"
@@ -259,16 +292,18 @@ app.use(
 app.use(
   (req, res) => {
 
-    res.status(404).json({
-      success: false,
-      mensaje:
-        "La ruta solicitada no existe."
-    });
+    return res
+      .status(404)
+      .json({
+        success: false,
+        mensaje:
+          "La ruta solicitada no existe."
+      });
   }
 );
 
 // =====================================
-// MANEJO DE ERRORES
+// MANEJO GENERAL DE ERRORES
 // =====================================
 
 app.use(
@@ -296,7 +331,8 @@ app.use(
       "ERROR_INTERNO"
     );
 
-    let estado = 500;
+    let estado =
+      500;
 
     let mensaje =
       "Ocurrió un error en el servidor.";
@@ -306,7 +342,8 @@ app.use(
       "entity.parse.failed"
     ) {
 
-      estado = 400;
+      estado =
+        400;
 
       mensaje =
         "El contenido enviado no tiene un formato JSON válido.";
@@ -318,7 +355,8 @@ app.use(
         "LIMIT_FILE_SIZE"
     ) {
 
-      estado = 413;
+      estado =
+        413;
 
       mensaje =
         "El contenido enviado supera el tamaño permitido.";
@@ -328,7 +366,8 @@ app.use(
       "MulterError"
     ) {
 
-      estado = 400;
+      estado =
+        400;
 
       mensaje =
         "No se pudo procesar el archivo enviado.";
@@ -338,13 +377,14 @@ app.use(
       error.statusCode === 404
     ) {
 
-      estado = 404;
+      estado =
+        404;
 
       mensaje =
         "El recurso solicitado no existe.";
     }
 
-    res
+    return res
       .status(
         estado
       )
@@ -412,6 +452,14 @@ const servidor =
 
       console.log(
         "RUTAS CARPETAS ADMINISTRACIÓN/RRHH CARGADAS"
+      );
+
+      console.log(
+        "RUTAS CARPETAS SERVICIOS/PROYECTOS CARGADAS"
+      );
+
+      console.log(
+        "SEGURIDAD HTTP ACTIVADA"
       );
 
       console.log(

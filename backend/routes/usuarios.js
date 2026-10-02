@@ -1,64 +1,103 @@
+"use strict";
+
 const express = require("express");
 
-const usuarioController = require("../controllers/usuarioController");
+const usuarioController =
+  require("../controllers/usuarioController");
 
 const {
   verificarSesion,
   permitirRoles
 } = require("../middlewares/auth");
 
+const {
+  limiteLogin
+} = require("../seguridad/limites");
+
 const router = express.Router();
 
 // =====================================
 // LOGIN
 // No requiere una sesión previa.
+// Protegido contra intentos repetidos.
 // =====================================
 
-router.post("/login", usuarioController.login);
+router.post(
+  "/login",
+  limiteLogin,
+  usuarioController.login
+);
 
 // =====================================
 // CERRAR SESIÓN
 // =====================================
 
-router.post("/logout", (req, res) => {
-  if (!req.session) {
-    res.clearCookie("coemsa.sid", { path: "/" });
+router.post(
+  "/logout",
+  (req, res) => {
 
-    return res.json({
-      success: true,
-      mensaje: "Sesión cerrada."
-    });
-  }
+    if (!req.session) {
 
-  req.session.destroy((error) => {
-    if (error) {
-      console.error("No se pudo cerrar la sesión.");
+      res.clearCookie(
+        "coemsa.sid",
+        {
+          path: "/"
+        }
+      );
 
-      return res.status(500).json({
-        success: false,
-        mensaje: "No se pudo cerrar la sesión. Inténtalo nuevamente."
+      return res.json({
+        success: true,
+        mensaje: "Sesión cerrada."
       });
     }
 
-    res.clearCookie("coemsa.sid", { path: "/" });
+    req.session.destroy(
+      (error) => {
 
-    return res.json({
-      success: true,
-      mensaje: "Sesión cerrada."
-    });
-  });
-});
+        if (error) {
+
+          console.error(
+            "No se pudo cerrar la sesión."
+          );
+
+          return res.status(500).json({
+            success: false,
+            mensaje:
+              "No se pudo cerrar la sesión. Inténtalo nuevamente."
+          });
+        }
+
+        res.clearCookie(
+          "coemsa.sid",
+          {
+            path: "/"
+          }
+        );
+
+        return res.json({
+          success: true,
+          mensaje: "Sesión cerrada."
+        });
+      }
+    );
+  }
+);
 
 // =====================================
 // CONSULTAR EL USUARIO AUTENTICADO
 // =====================================
 
-router.get("/sesion", verificarSesion, (req, res) => {
-  res.json({
-    success: true,
-    usuario: req.usuario
-  });
-});
+router.get(
+  "/sesion",
+  verificarSesion,
+  (req, res) => {
+
+    return res.json({
+      success: true,
+      usuario: req.usuario
+    });
+  }
+);
 
 // =====================================
 // DESDE AQUÍ: SOLO ADMINISTRADORES
@@ -66,22 +105,61 @@ router.get("/sesion", verificarSesion, (req, res) => {
 
 router.use(
   verificarSesion,
-  permitirRoles("Administrador")
+  permitirRoles(
+    "Administrador"
+  )
 );
 
-router.get("/", usuarioController.listarUsuarios);
+// =====================================
+// LISTAR USUARIOS
+// =====================================
 
-router.post("/", usuarioController.crearUsuario);
+router.get(
+  "/",
+  usuarioController.listarUsuarios
+);
 
-router.put("/editar/:id", usuarioController.editarUsuario);
+// =====================================
+// CREAR USUARIO
+// =====================================
 
-router.put("/estado/:id", usuarioController.cambiarEstado);
+router.post(
+  "/",
+  usuarioController.crearUsuario
+);
 
-router.get("/test", (req, res) => {
-  res.json({
-    success: true,
-    mensaje: "Rutas de usuarios protegidas."
-  });
-});
+// =====================================
+// EDITAR USUARIO
+// =====================================
+
+router.put(
+  "/editar/:id",
+  usuarioController.editarUsuario
+);
+
+// =====================================
+// ACTIVAR / DESACTIVAR USUARIO
+// =====================================
+
+router.put(
+  "/estado/:id",
+  usuarioController.cambiarEstado
+);
+
+// =====================================
+// PRUEBA DE RUTA PROTEGIDA
+// =====================================
+
+router.get(
+  "/test",
+  (req, res) => {
+
+    return res.json({
+      success: true,
+      mensaje:
+        "Rutas de usuarios protegidas."
+    });
+  }
+);
 
 module.exports = router;
