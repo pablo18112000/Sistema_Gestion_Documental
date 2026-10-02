@@ -148,24 +148,26 @@ function filtroServicioSupervisor(idArea) {
 
 function filtroDocumentoSupervisor(usuario) {
 
-  if (
-    !usuario ||
-    usuario.nombre_rol !==
-      "Supervisor"
-  ) {
+  if (!usuario) {
+    return {
+      sql: "1 = 0",
+      parametros: []
+    };
+  }
 
+  /*
+   * Administrador:
+   * acceso completo.
+   */
+  if (
+    usuario.nombre_rol ===
+      "Administrador"
+  ) {
     return {
       sql: "1 = 1",
       parametros: []
     };
   }
-
-
-  const area =
-    Number(
-      usuario.id_area
-    );
-
 
   const proyecto =
     "COALESCE(d.id_proyecto, s.id_proyecto)";
@@ -173,12 +175,78 @@ function filtroDocumentoSupervisor(usuario) {
   const areaDocumento =
     "COALESCE(d.id_area, s.id_area)";
 
+  /*
+   * Usuario:
+   * área propia o proyectos asignados.
+   */
+  if (
+    usuario.nombre_rol ===
+      "Usuario"
+  ) {
+    const idUsuario =
+      Number(
+        usuario.id_usuario
+      );
+
+    const area =
+      Number(
+        usuario.id_area
+      );
+
+    if (
+      !Number.isSafeInteger(idUsuario) ||
+      idUsuario <= 0 ||
+      !Number.isSafeInteger(area) ||
+      area <= 0
+    ) {
+      return {
+        sql: "1 = 0",
+        parametros: []
+      };
+    }
+
+    return {
+      sql:
+        "(" +
+        "(" +
+        proyecto +
+        " IS NOT NULL AND EXISTS (" +
+        "SELECT 1 FROM usuario_proyectos up " +
+        "WHERE up.id_usuario = ? " +
+        "AND up.id_proyecto = " +
+        proyecto +
+        ")) OR (" +
+        proyecto +
+        " IS NULL AND " +
+        areaDocumento +
+        " = ?))",
+
+      parametros: [
+        idUsuario,
+        area
+      ]
+    };
+  }
+
+  if (
+    usuario.nombre_rol !==
+      "Supervisor"
+  ) {
+    return {
+      sql: "1 = 0",
+      parametros: []
+    };
+  }
+
+  const area =
+    Number(
+      usuario.id_area
+    );
 
   if (
     area === 1 ||
     area === 3
   ) {
-
     return {
       sql:
         proyecto +
@@ -189,9 +257,7 @@ function filtroDocumentoSupervisor(usuario) {
     };
   }
 
-
   if (area === 2) {
-
     return {
       sql:
         "(" +
@@ -205,9 +271,7 @@ function filtroDocumentoSupervisor(usuario) {
     };
   }
 
-
   if (area === 4) {
-
     return {
       sql:
         proyecto +
@@ -218,9 +282,7 @@ function filtroDocumentoSupervisor(usuario) {
     };
   }
 
-
   if (area === 5) {
-
     return {
       sql:
         proyecto +
@@ -231,13 +293,11 @@ function filtroDocumentoSupervisor(usuario) {
     };
   }
 
-
   return {
     sql: "1 = 0",
     parametros: []
   };
 }
-
 
 exports.consultar = async (req, res) => {
   try {
@@ -246,7 +306,8 @@ exports.consultar = async (req, res) => {
     // El Administrador conserva acceso completo.
     // El Supervisor consulta únicamente su sección.
     // El comportamiento actual del rol Usuario se conserva.
-    const esUsuario = false;
+    const esUsuario =
+      usuario.nombre_rol === "Usuario";
 
     const esAdministrador =
       usuario.nombre_rol === "Administrador";
@@ -1548,6 +1609,7 @@ exports.buscarGeneral = async (req, res) => {
         d.id_documento DESC
       LIMIT 101 OFFSET ?
     `, [
+      ...accesoSupervisor.parametros,
       termino,
       (pagina - 1) * 100
     ]);

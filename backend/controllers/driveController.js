@@ -64,39 +64,91 @@ function filtroLectura(usuario) {
     "Usuario"
   ];
 
-
   if (
     !usuario ||
     !roles.includes(
       usuario.nombre_rol
     )
   ) {
-
     throw fallo(
       403,
       "Tu cuenta no tiene permiso de consulta."
     );
   }
 
-
   /*
    * Administrador:
-   * conserva acceso total.
-   *
-   * Usuario:
-   * conserva el comportamiento actual.
+   * acceso completo.
    */
   if (
-    usuario.nombre_rol !==
-      "Supervisor"
+    usuario.nombre_rol ===
+      "Administrador"
   ) {
-
     return {
       sql: "1 = 1",
       parametros: []
     };
   }
 
+  const proyecto =
+    "COALESCE(d.id_proyecto, s.id_proyecto)";
+
+  const areaDocumento =
+    "COALESCE(d.id_area, s.id_area)";
+
+  /*
+   * Usuario:
+   * - proyectos asignados;
+   * - documentos sin proyecto de su área.
+   */
+  if (
+    usuario.nombre_rol ===
+      "Usuario"
+  ) {
+    const idUsuario =
+      Number(
+        usuario.id_usuario
+      );
+
+    const area =
+      Number(
+        usuario.id_area
+      );
+
+    if (
+      !Number.isSafeInteger(idUsuario) ||
+      idUsuario <= 0 ||
+      !Number.isSafeInteger(area) ||
+      area <= 0
+    ) {
+      return {
+        sql: "1 = 0",
+        parametros: []
+      };
+    }
+
+    return {
+      sql:
+        "(" +
+        "(" +
+        proyecto +
+        " IS NOT NULL AND EXISTS (" +
+        "SELECT 1 FROM usuario_proyectos up " +
+        "WHERE up.id_usuario = ? " +
+        "AND up.id_proyecto = " +
+        proyecto +
+        ")) OR (" +
+        proyecto +
+        " IS NULL AND " +
+        areaDocumento +
+        " = ?))",
+
+      parametros: [
+        idUsuario,
+        area
+      ]
+    };
+  }
 
   /*
    * Supervisor:
@@ -107,22 +159,10 @@ function filtroLectura(usuario) {
       usuario.id_area
     );
 
-
-  const proyecto =
-    "COALESCE(d.id_proyecto, s.id_proyecto)";
-
-  const areaDocumento =
-    "COALESCE(d.id_area, s.id_area)";
-
-
-  /*
-   * Recursos Humanos + Administración
-   */
   if (
     area === 1 ||
     area === 3
   ) {
-
     return {
       sql:
         proyecto +
@@ -133,12 +173,7 @@ function filtroLectura(usuario) {
     };
   }
 
-
-  /*
-   * Servicios y Proyectos
-   */
   if (area === 2) {
-
     return {
       sql:
         "(" +
@@ -152,12 +187,7 @@ function filtroLectura(usuario) {
     };
   }
 
-
-  /*
-   * Logística
-   */
   if (area === 4) {
-
     return {
       sql:
         proyecto +
@@ -168,12 +198,7 @@ function filtroLectura(usuario) {
     };
   }
 
-
-  /*
-   * Seguridad
-   */
   if (area === 5) {
-
     return {
       sql:
         proyecto +
@@ -184,11 +209,6 @@ function filtroLectura(usuario) {
     };
   }
 
-
-  /*
-   * Un Supervisor sin un área reconocida
-   * no recibe documentos.
-   */
   return {
     sql: "1 = 0",
     parametros: []
